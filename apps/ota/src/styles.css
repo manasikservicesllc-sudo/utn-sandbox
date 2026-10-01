@@ -16,6 +16,8 @@
 body {
   margin: 0;
 }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+.checkout-main, .surface, fieldset, .review-person > div { min-width: 0; }
 button,
 input,
 select {
@@ -1540,7 +1542,7 @@ footer > span {
   }
   .search-card input,
   .search-card select {
-    font-size: 11px;
+    font-size: 16px;
   }
   .search-button {
     width: 42px;
@@ -1700,7 +1702,7 @@ footer > span {
   }
   .field input,
   .field select {
-    font-size: 11px;
+    font-size: 16px;
     padding: 10px 8px;
   }
   .field input[type="date"] {
@@ -1747,6 +1749,28 @@ footer > span {
   .hero-link {
     font-size: 11px;
   }
+}
+/* Keep focused controls at a readable size on iOS without disabling pinch zoom. */
+@media (max-width: 1000px), (pointer: coarse) {
+  .field input, .field select, .search-card input, .search-card select {
+    font-size: 16px;
+    min-height: 48px;
+  }
+}
+@media (max-width: 720px) {
+  .signin { padding: 24px 20px; }
+  .field > span { font-size: 13px; }
+  .signin > p, .muted, .service-option p, .consent, .prototype-note { font-size: 14px; }
+  .primary, .next-action .primary { font-size: 14px; min-height: 48px; white-space: normal; }
+  .review-row { flex-wrap: wrap; font-size: 13px; }
+  .review-row strong { overflow-wrap: anywhere; }
+  .search-card { grid-template-columns: minmax(0, 1fr) 48px; }
+  .search-card label { grid-column: 1; }
+  .search-card label > span { font-size: 10px; }
+  .search-button { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+}
+@media (max-width: 480px) {
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
   html {

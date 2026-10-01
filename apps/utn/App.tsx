@@ -554,6 +554,8 @@ export default function App() {
                                 borderWidth: 1,
                                 borderColor: C.line,
                                 padding: 12,
+                                fontSize: 16,
+                                minHeight: 48,
                                 color: C.ink,
                                 borderRadius: 4,
                                 marginTop: 5,
@@ -1164,7 +1166,7 @@ const s = StyleSheet.create({
     lineHeight: 30,
   },
   editorialFine: { color: "#849895", fontSize: 10, marginTop: 20 },
-  content: { flex: 1, padding: 48, paddingTop: 36 },
+  content: { flex: 1, minWidth: 0, padding: 48, paddingTop: 36 },
   progress: {
     flexDirection: "row",
     justifyContent: "space-between",
