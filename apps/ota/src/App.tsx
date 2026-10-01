@@ -1177,6 +1177,14 @@ export default function App() {
                   These are message previews. Live SMS and WhatsApp delivery
                   requires a connected messaging provider.
                 </small>
+                {booking?.notifications?.filter((n: any) => n.channel === "email").map((mail: any) => (
+                  <div key={mail.id} style={{ borderTop: "1px solid #dce0d6", marginTop: 20, paddingTop: 16, overflowWrap: "anywhere" }}>
+                    <strong>Email · البريد الإلكتروني</strong>
+                    <p dir="auto">{mail.to || "لم يُسجّل بريد إلكتروني"}</p>
+                    <p dir="auto">{mail.subject}</p>
+                    <small>{mail.status === "accepted" ? "Accepted by email provider · تم قبول الإرسال، وصول البريد غير مؤكد" : mail.status === "failed" ? "Email failed · تعذر الإرسال" : mail.status === "invalid_recipient" ? "Invalid email · عنوان بريد غير صالح" : mail.status === "simulated" ? "Demo preview · معاينة تجريبية" : mail.status === "not_configured" ? "Email sending not activated · إرسال البريد غير مفعّل" : "Email pending · البريد قيد الانتظار"}</small>
+                  </div>
+                ))}
               </div>
             </section>
             <aside className="connection-card">

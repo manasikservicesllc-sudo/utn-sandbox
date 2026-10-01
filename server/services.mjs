@@ -14,6 +14,7 @@ import {
   validateDocument,
 } from "./shared.mjs";
 import { reviewImage } from "./ai.mjs";
+import { invitationEmail, dispatchEmail } from "./email.mjs";
 
 export function createRuntime(options = {}) {
   const publicSandbox = options.publicSandbox ?? process.env.PUBLIC_SANDBOX === "true";
@@ -506,9 +507,18 @@ export function createRuntime(options = {}) {
               createdAt: r.createdAt,
               sentAt: null,
             });
+          const mail = invitationEmail({ requestNumber: internal ? extra.otaBookingId : id, webUrl: invite.webUrl });
+          utn.data.notifications.push({ id: token(), requestId: id, invitationId: invite.id, channel: "email", to: applicant.emailAddress || null, subject: mail.subject, preview: mail.text, html: mail.html, status: "pending", createdAt: r.createdAt, sentAt: null });
         }
         if (hash) utn.data.idempotency[hash] = { id, payloadHash };
         utn.save();
+        // Persist request/idempotency before any external side effect to avoid duplicate mail.
+        for (const mail of utn.data.notifications.filter(n => n.requestId === id && n.channel === "email" && n.status === "pending")) {
+          mail.status = "sending";
+          utn.save();
+          await dispatchEmail(mail, { sendEmail: options.sendEmail, from: options.emailFrom });
+          utn.save();
+        }
         return json(res, 201, requestView(r));
       }
       fail(405, "Method not allowed");

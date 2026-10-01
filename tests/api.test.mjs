@@ -73,7 +73,7 @@ test("multi-applicant round trip, scoped invitation, signed certificate and pers
   assert.equal(b.status, 201);
   assert.equal(b.data.invitations.length, 2);
   assert.ok(b.data.utnRequestId.startsWith("REQ-"));
-  assert.equal(b.data.notifications.length, 4);
+  assert.equal(b.data.notifications.length, 6);
   assert.equal(b.data.notifications[0].status, "simulated");
   assert.ok(b.data.notifications[0].preview.includes(b.data.id));
   assert.ok(b.data.notifications[0].preview.includes(b.data.invitations[0].webUrl));
@@ -343,7 +343,7 @@ test("direct partner intake authenticates, preserves ministry-shaped body, repor
   const created = await call(url, payload, headers);
   assert.equal(created.status, 201);
   assert.equal(created.data.invitations.length, 2);
-  assert.equal(created.data.notifications.length, 4);
+  assert.equal(created.data.notifications.length, 6);
   assert.ok(
     created.data.notifications.every(
       (n) => n.status === "simulated" && n.sentAt === null,
@@ -364,8 +364,21 @@ test("direct partner intake authenticates, preserves ministry-shaped body, repor
     { "x-api-key": "test-partner-key" },
   );
   assert.ok(
-    plain.data.notifications.every((n) => n.status === "not_configured"),
+    plain.data.notifications.every((n) => n.status === (n.channel === "email" ? "simulated" : "not_configured")),
   );
+});
+test("welcome email goes to the registered traveler once per idempotent request", async t => {
+  const sent = [];
+  const s = await setup(t, { emailFrom: "welcome@utn-staging.com", sendEmail: async mail => {sent.push(mail); return {messageId:"mock-mail-1"};} });
+  const payload = booking().visaRequest;
+  payload.mutamers[0].emailAddress = "traveler@recipient.invalid";
+  const headers = { "x-api-key": "test-partner-key", "Idempotency-Key": "email-once-test" };
+  const first = await call(s.utnUrl + "/api/v1/verification-requests", payload, headers);
+  await call(s.utnUrl + "/api/v1/verification-requests", payload, headers);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].to, payload.mutamers[0].emailAddress);
+  assert.ok(sent[0].text.includes(first.data.invitations[0].webUrl));
+  assert.equal(first.data.notifications.find(n=>n.channel === "email").status, "accepted");
 });
 test("applicant corrections revoke certificate and signed external callbacks use registered URL and separate secret", async (t) => {
   const deliveries = [];

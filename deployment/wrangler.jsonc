@@ -20,5 +20,7 @@
     "UTN_ORIGIN": "https://utn-staging.com",
     "API_ORIGIN": "https://api.utn-staging.com",
     "OPENAI_MODEL": "gpt-4.1-mini",
+    "EMAIL_FROM": "welcome@utn-staging.com",
+    "EMAIL_ENABLED": "false",
   },
 }

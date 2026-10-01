@@ -66,6 +66,8 @@ export class PrototypeState extends DurableObject {
       partnerCallbackSecret: env.PARTNER_CALLBACK_SECRET,
       apiKey: env.OPENAI_API_KEY || "",
       model: env.OPENAI_MODEL || "gpt-4.1-mini",
+      emailFrom: env.EMAIL_FROM || "",
+      sendEmail: env.EMAIL_ENABLED === "true" && env.EMAIL ? (message) => env.EMAIL.send(message) : undefined,
       origins: [env.PUBLIC_ORIGIN, env.UTN_ORIGIN, env.API_ORIGIN].filter(
         Boolean,
       ),
