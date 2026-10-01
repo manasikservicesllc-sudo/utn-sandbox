@@ -1,0 +1,1225 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "UTN partner sandbox",
+    "version": "1.0.0",
+    "description": "Prototype companion contract. Guide-shaped fields are preserved; this is not the ministry endpoint and does not implement full ministry validation."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4101/api",
+      "description": "Local UTN service"
+    },
+    {
+      "url": "https://utn-api.halavalet.workers.dev",
+      "description": "Hosted partner sandbox API"
+    }
+  ],
+  "security": [
+    {
+      "PartnerApiKey": []
+    }
+  ],
+  "paths": {
+    "/v1/verification-requests": {
+      "post": {
+        "summary": "Create a verification request from an OTA visa-shaped payload",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationRequest"
+              },
+              "example": {
+                "groupInfo": {
+                  "otaId": 11,
+                  "otaRequestId": 100001,
+                  "otaGroupId": 100001,
+                  "uoId": 0,
+                  "eaId": 0,
+                  "eaEmbassyId": 0,
+                  "eaCountryId": 784
+                },
+                "package": {
+                  "type": 0,
+                  "customizedPackageId": null,
+                  "arrivalRoute": {
+                    "arrivalFlightId": 0,
+                    "arrivalType": 1,
+                    "transportation": {
+                      "category": 2,
+                      "transportationType": 1,
+                      "transportationOtaType": 4,
+                      "price": 0,
+                      "tripDate": "2026-11-15T12:00:00Z",
+                      "tripNo": "DEMO-ARR",
+                      "transportCompanyId": 0,
+                      "vehicleMake": 0,
+                      "vehicleType": 0,
+                      "instructionsAr": "نقل تجريبي",
+                      "instructionsEn": "Sample transfer"
+                    }
+                  },
+                  "departureRoute": {
+                    "departureFlightId": 0,
+                    "departureType": 1
+                  },
+                  "groundServices": [
+                    {
+                      "Category": 2,
+                      "code": "utn",
+                      "BRN": "DEMO",
+                      "nameAr": "خدمات تجريبية",
+                      "nameEn": "Essential + UTN",
+                      "descriptionAr": "نموذج تجريبي",
+                      "descriptionEn": "Sample ground service",
+                      "price": 150
+                    }
+                  ],
+                  "packageRoutes": [
+                    {
+                      "housing": [
+                        {
+                          "price": 4204,
+                          "checkInDate": "2026-11-15T12:00:00Z",
+                          "checkOutDate": "2026-11-18T12:00:00Z",
+                          "hotelId": 0,
+                          "hotelNameAr": "فندق نموذجي",
+                          "hotelNameEn": "Sample hotel",
+                          "hotelAddressAr": "مكة المكرمة",
+                          "hotelAddressEn": "Makkah",
+                          "hotelDescriptionAr": "إقامة تجريبية",
+                          "hotelDescriptionEn": "Sample stay",
+                          "reservedHeadCount": 1,
+                          "hasFoodServices": true,
+                          "foodProviderType": 1,
+                          "foodServiceProviderId": 0,
+                          "breakfastDescription": "Sample breakfast",
+                          "lunchDescription": "",
+                          "dinnerDescription": "",
+                          "otherMealDescription": ""
+                        }
+                      ],
+                      "transportation": [],
+                      "additionalServices": [],
+                      "enrichmentServices": []
+                    }
+                  ]
+                },
+                "mutamers": [
+                  {
+                    "otaMutamerId": 1,
+                    "maritalStatus": 2,
+                    "firstNameEn": "Omar",
+                    "fatherNameEn": "Ahmed",
+                    "grandFatherNameEn": "Ali",
+                    "familyNameEn": "Hassan",
+                    "firstNameAr": "عمر",
+                    "fatherNameAr": "أحمد",
+                    "grandFatherNameAr": "علي",
+                    "familyNameAr": "حسن",
+                    "nationalityId": 818,
+                    "birthCountryId": 818,
+                    "birthCityName": "Cairo",
+                    "birthDate": "1991-05-12T12:00:00Z",
+                    "passportNumber": "DEMO10001",
+                    "passportTypeId": 1,
+                    "passportIssueDate": "2024-01-15T12:00:00Z",
+                    "passportExpiryDate": "2030-01-14T12:00:00Z",
+                    "passportIssuingCity": "Cairo",
+                    "passportIssuingCountryId": 818,
+                    "gender": 1,
+                    "relativeRelationId": 0,
+                    "educationalLevel": 4,
+                    "profession": "Architect",
+                    "mobileNumber": "+971500000000",
+                    "emailAddress": "traveler@example.com",
+                    "currentCountryId": 784,
+                    "iqamaNo": "DEMO-RES-1",
+                    "iqamaExpiryDate": "2028-01-01T12:00:00Z",
+                    "disclosureAnswers": [],
+                    "personalPicture": "",
+                    "passportPicture": "",
+                    "personalIqamaPicture": ""
+                  }
+                ],
+                "additionalInformation": {
+                  "prototype": true,
+                  "packageName": "The Signature Journey",
+                  "consentToShare": true,
+                  "lookupCodes": "Sample ISO numeric country values; not verified ministry lookup IDs"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestStatus"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created; includes per-traveler invitation URLs and request identifier",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/verification-requests/{id}": {
+      "get": {
+        "summary": "Read request and per-traveler verification status",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See integration guide for errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "PartnerApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "schemas": {
+      "GroupInfo": {
+        "type": "object",
+        "properties": {
+          "otaId": {
+            "type": "number"
+          },
+          "otaRequestId": {
+            "type": "number"
+          },
+          "otaGroupId": {
+            "type": "number"
+          },
+          "uoId": {
+            "type": "number"
+          },
+          "eaId": {
+            "type": "number"
+          },
+          "eaEmbassyId": {
+            "type": "number"
+          },
+          "eaCountryId": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Transportation": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "number"
+          },
+          "transportationType": {
+            "type": "number"
+          },
+          "transportationOtaType": {
+            "type": "number"
+          },
+          "price": {
+            "type": "number"
+          },
+          "transportCompanyId": {
+            "type": "number"
+          },
+          "vehicleMake": {
+            "type": "number"
+          },
+          "vehicleType": {
+            "type": "number"
+          },
+          "tripNo": {
+            "type": "string"
+          },
+          "instructionsAr": {
+            "type": "string"
+          },
+          "instructionsEn": {
+            "type": "string"
+          },
+          "tripDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Housing": {
+        "type": "object",
+        "properties": {
+          "price": {
+            "type": "number"
+          },
+          "hotelId": {
+            "type": "number"
+          },
+          "reservedHeadCount": {
+            "type": "number"
+          },
+          "foodProviderType": {
+            "type": "number"
+          },
+          "foodServiceProviderId": {
+            "type": "number"
+          },
+          "hotelNameAr": {
+            "type": "string"
+          },
+          "hotelNameEn": {
+            "type": "string"
+          },
+          "hotelAddressAr": {
+            "type": "string"
+          },
+          "hotelAddressEn": {
+            "type": "string"
+          },
+          "hotelDescriptionAr": {
+            "type": "string"
+          },
+          "hotelDescriptionEn": {
+            "type": "string"
+          },
+          "breakfastDescription": {
+            "type": "string"
+          },
+          "lunchDescription": {
+            "type": "string"
+          },
+          "dinnerDescription": {
+            "type": "string"
+          },
+          "otherMealDescription": {
+            "type": "string"
+          },
+          "checkInDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "checkOutDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "hasFoodServices": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": true
+      },
+      "AdditionalService": {
+        "type": "object",
+        "properties": {
+          "nameAr": {
+            "type": "string"
+          },
+          "nameEn": {
+            "type": "string"
+          },
+          "descriptionAr": {
+            "type": "string"
+          },
+          "descriptionEn": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": true
+      },
+      "GroundService": {
+        "type": "object",
+        "properties": {
+          "nameAr": {
+            "type": "string"
+          },
+          "nameEn": {
+            "type": "string"
+          },
+          "descriptionAr": {
+            "type": "string"
+          },
+          "descriptionEn": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "Category": {
+            "type": "number"
+          },
+          "code": {
+            "type": "string"
+          },
+          "BRN": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "EnrichmentService": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "descriptionAr": {
+            "type": "string"
+          },
+          "descriptionEn": {
+            "type": "string"
+          },
+          "tourGuideNameAr": {
+            "type": "string"
+          },
+          "tourGuideNameEn": {
+            "type": "string"
+          },
+          "tourGuidePhoneNumber": {
+            "type": "string"
+          },
+          "tourGuidePhoneCountryKey": {
+            "type": "number"
+          },
+          "serviceCost": {
+            "type": "number"
+          },
+          "serviceProfit": {
+            "type": "number"
+          },
+          "date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Package": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "number",
+            "description": "Guide: 0 package without UO; 1 customized package. Lookup/business validation not implemented."
+          },
+          "customizedPackageId": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "arrivalRoute": {
+            "type": "object",
+            "properties": {
+              "arrivalFlightId": {
+                "type": "number"
+              },
+              "arrivalType": {
+                "type": "number"
+              },
+              "transportation": {
+                "$ref": "#/components/schemas/Transportation"
+              }
+            },
+            "additionalProperties": true
+          },
+          "departureRoute": {
+            "type": "object",
+            "properties": {
+              "departureFlightId": {
+                "type": "number"
+              },
+              "departureType": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": true
+          },
+          "groundServices": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/GroundService"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "packageRoutes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "housing": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Housing"
+                  }
+                },
+                "transportation": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Transportation"
+                  }
+                },
+                "additionalServices": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdditionalService"
+                  }
+                },
+                "enrichmentServices": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EnrichmentService"
+                  }
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "DisclosureAnswer": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "number"
+          },
+          "answer": {
+            "type": "boolean"
+          },
+          "simpleReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "detailedAnswers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "relativeName": {
+                  "type": "string"
+                },
+                "reasonOfTravel": {
+                  "type": "string"
+                },
+                "relationId": {
+                  "type": "number"
+                },
+                "countryId": {
+                  "type": "number"
+                },
+                "travelFromDate": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "travelToDate": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "Mutamer": {
+        "type": "object",
+        "properties": {
+          "otaMutamerId": {
+            "type": "number"
+          },
+          "maritalStatus": {
+            "type": "number"
+          },
+          "nationalityId": {
+            "type": "number"
+          },
+          "birthCountryId": {
+            "type": "number"
+          },
+          "passportTypeId": {
+            "type": "number"
+          },
+          "passportIssuingCountryId": {
+            "type": "number"
+          },
+          "gender": {
+            "type": "number"
+          },
+          "relativeRelationId": {
+            "type": "number"
+          },
+          "educationalLevel": {
+            "type": "number"
+          },
+          "currentCountryId": {
+            "type": "number"
+          },
+          "firstNameEn": {
+            "type": "string"
+          },
+          "fatherNameEn": {
+            "type": "string"
+          },
+          "grandFatherNameEn": {
+            "type": "string"
+          },
+          "familyNameEn": {
+            "type": "string"
+          },
+          "firstNameAr": {
+            "type": "string"
+          },
+          "fatherNameAr": {
+            "type": "string"
+          },
+          "grandFatherNameAr": {
+            "type": "string"
+          },
+          "familyNameAr": {
+            "type": "string"
+          },
+          "birthCityName": {
+            "type": "string"
+          },
+          "passportNumber": {
+            "type": "string"
+          },
+          "passportIssuingCity": {
+            "type": "string"
+          },
+          "profession": {
+            "type": "string"
+          },
+          "mobileNumber": {
+            "type": "string"
+          },
+          "emailAddress": {
+            "type": "string"
+          },
+          "iqamaNo": {
+            "type": "string"
+          },
+          "personalPicture": {
+            "type": "string"
+          },
+          "passportPicture": {
+            "type": "string"
+          },
+          "personalIqamaPicture": {
+            "type": "string"
+          },
+          "birthDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "passportIssueDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "passportExpiryDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "iqamaExpiryDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "disclosureAnswers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DisclosureAnswer"
+            }
+          }
+        },
+        "required": [
+          "otaMutamerId",
+          "firstNameEn",
+          "familyNameEn"
+        ],
+        "additionalProperties": true
+      },
+      "VerificationRequest": {
+        "type": "object",
+        "properties": {
+          "groupInfo": {
+            "$ref": "#/components/schemas/GroupInfo"
+          },
+          "package": {
+            "$ref": "#/components/schemas/Package"
+          },
+          "mutamers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mutamer"
+            },
+            "minItems": 1,
+            "maxItems": 10
+          },
+          "additionalInformation": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "OTA-only fields, booking context and consent metadata; preserved separately."
+          }
+        },
+        "required": [
+          "groupInfo",
+          "package",
+          "mutamers"
+        ],
+        "additionalProperties": true
+      },
+      "Certificate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "bookingId": {
+            "type": "string"
+          },
+          "invitationId": {
+            "type": "string"
+          },
+          "applicantName": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string"
+          },
+          "simulated": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Verification": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "verified",
+              "needs_review",
+              "rejected"
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "demo",
+              "ai"
+            ]
+          },
+          "simulated": {
+            "type": "boolean"
+          },
+          "category": {
+            "type": "string"
+          },
+          "documentType": {
+            "type": "string"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revision": {
+            "type": "number"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "passed": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "concerns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "extractedFields": {
+            "type": "object",
+            "properties": {
+              "fullName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "documentNumber": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "issuingCountry": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "expiryDate": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": true
+          },
+          "certificate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Certificate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "callbackDelivered": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Invitation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "webUrl": {
+            "type": "string"
+          },
+          "deepLink": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "otaMutamerId": {
+            "type": "number"
+          },
+          "certificate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Certificate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "verification": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Verification"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": true
+      },
+      "RequestStatus": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending_verification",
+              "verified",
+              "needs_review",
+              "action_required"
+            ]
+          },
+          "invitations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Invitation"
+            }
+          },
+          "notifications": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "requestId": {
+                  "type": "string"
+                },
+                "invitationId": {
+                  "type": "string"
+                },
+                "preview": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "channel": {
+                  "type": "string",
+                  "enum": [
+                    "sms",
+                    "whatsapp"
+                  ]
+                },
+                "to": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "simulated",
+                    "not_configured"
+                  ]
+                },
+                "sentAt": {
+                  "type": "null"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "callback": {
+            "type": "object",
+            "properties": {
+              "configured": {
+                "type": "boolean"
+              },
+              "deliveries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "eventId": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "delivered",
+                        "queued",
+                        "not_configured"
+                      ]
+                    },
+                    "attempts": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  }
+}

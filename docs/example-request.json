@@ -1,0 +1,120 @@
+{
+  "groupInfo": {
+    "otaId": 11,
+    "otaRequestId": 100001,
+    "otaGroupId": 100001,
+    "uoId": 0,
+    "eaId": 0,
+    "eaEmbassyId": 0,
+    "eaCountryId": 784
+  },
+  "package": {
+    "type": 0,
+    "customizedPackageId": null,
+    "arrivalRoute": {
+      "arrivalFlightId": 0,
+      "arrivalType": 1,
+      "transportation": {
+        "category": 2,
+        "transportationType": 1,
+        "transportationOtaType": 4,
+        "price": 0,
+        "tripDate": "2026-11-15T12:00:00Z",
+        "tripNo": "DEMO-ARR",
+        "transportCompanyId": 0,
+        "vehicleMake": 0,
+        "vehicleType": 0,
+        "instructionsAr": "نقل تجريبي",
+        "instructionsEn": "Sample transfer"
+      }
+    },
+    "departureRoute": {
+      "departureFlightId": 0,
+      "departureType": 1
+    },
+    "groundServices": [
+      {
+        "Category": 2,
+        "code": "utn",
+        "BRN": "DEMO",
+        "nameAr": "خدمات تجريبية",
+        "nameEn": "Essential + UTN",
+        "descriptionAr": "نموذج تجريبي",
+        "descriptionEn": "Sample ground service",
+        "price": 150
+      }
+    ],
+    "packageRoutes": [
+      {
+        "housing": [
+          {
+            "price": 4204,
+            "checkInDate": "2026-11-15T12:00:00Z",
+            "checkOutDate": "2026-11-18T12:00:00Z",
+            "hotelId": 0,
+            "hotelNameAr": "فندق نموذجي",
+            "hotelNameEn": "Sample hotel",
+            "hotelAddressAr": "مكة المكرمة",
+            "hotelAddressEn": "Makkah",
+            "hotelDescriptionAr": "إقامة تجريبية",
+            "hotelDescriptionEn": "Sample stay",
+            "reservedHeadCount": 1,
+            "hasFoodServices": true,
+            "foodProviderType": 1,
+            "foodServiceProviderId": 0,
+            "breakfastDescription": "Sample breakfast",
+            "lunchDescription": "",
+            "dinnerDescription": "",
+            "otherMealDescription": ""
+          }
+        ],
+        "transportation": [],
+        "additionalServices": [],
+        "enrichmentServices": []
+      }
+    ]
+  },
+  "mutamers": [
+    {
+      "otaMutamerId": 1,
+      "maritalStatus": 2,
+      "firstNameEn": "Omar",
+      "fatherNameEn": "Ahmed",
+      "grandFatherNameEn": "Ali",
+      "familyNameEn": "Hassan",
+      "firstNameAr": "عمر",
+      "fatherNameAr": "أحمد",
+      "grandFatherNameAr": "علي",
+      "familyNameAr": "حسن",
+      "nationalityId": 818,
+      "birthCountryId": 818,
+      "birthCityName": "Cairo",
+      "birthDate": "1991-05-12T12:00:00Z",
+      "passportNumber": "DEMO10001",
+      "passportTypeId": 1,
+      "passportIssueDate": "2024-01-15T12:00:00Z",
+      "passportExpiryDate": "2030-01-14T12:00:00Z",
+      "passportIssuingCity": "Cairo",
+      "passportIssuingCountryId": 818,
+      "gender": 1,
+      "relativeRelationId": 0,
+      "educationalLevel": 4,
+      "profession": "Architect",
+      "mobileNumber": "+971500000000",
+      "emailAddress": "traveler@example.com",
+      "currentCountryId": 784,
+      "iqamaNo": "DEMO-RES-1",
+      "iqamaExpiryDate": "2028-01-01T12:00:00Z",
+      "disclosureAnswers": [],
+      "personalPicture": "",
+      "passportPicture": "",
+      "personalIqamaPicture": ""
+    }
+  ],
+  "additionalInformation": {
+    "prototype": true,
+    "packageName": "The Signature Journey",
+    "consentToShare": true,
+    "lookupCodes": "Sample ISO numeric country values; not verified ministry lookup IDs"
+  }
+}

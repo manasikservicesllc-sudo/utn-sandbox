@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.expo/
+.env
+.env.local
+.data/
+data/
+tmp/
+guide-extracted.txt
+*.log
+.wrangler/
+*.tsbuildinfo

@@ -1,0 +1,15 @@
+{
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_UTN_API_URL": "https://utn-api.halavalet.workers.dev",
+        "EXPO_PUBLIC_OTA_URL": "https://utn-otn.halavalet.workers.dev"
+      }
+    },
+    "simulator": {
+      "extends": "preview",
+      "ios": { "simulator": true }
+    }
+  }
+}

@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>UTN · Partner integration studio</title>
+    <style>
+      :root {
+        --ink: #16352f;
+        --muted: #697b72;
+        --paper: #f5f4ed;
+        --gold: #b49b66;
+        --line: #dce2d8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        font:
+          15px/1.65 system-ui,
+          sans-serif;
+        color: var(--ink);
+      }
+      a {
+        color: inherit;
+        text-underline-offset: 4px;
+      }
+      header {
+        max-width: 1240px;
+        margin: auto;
+        padding: 28px 36px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .brand {
+        font-size: 23px;
+        letter-spacing: 5px;
+        font-weight: 700;
+      }
+      .tag {
+        font-size: 10px;
+        letter-spacing: 2px;
+        border: 1px solid var(--line);
+        padding: 7px 13px;
+        border-radius: 30px;
+      }
+      .hero {
+        background: #123b32;
+        color: #f8f7ef;
+        padding: 70px max(36px, calc((100vw - 1168px) / 2));
+        position: relative;
+        overflow: hidden;
+      }
+      .hero:after {
+        content: "";
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        border: 1px solid #486657;
+        border-radius: 50%;
+        right: -120px;
+        top: -200px;
+        pointer-events: none;
+      }
+      .eyebrow {
+        font-size: 10px;
+        letter-spacing: 3px;
+        color: var(--gold);
+        font-weight: 600;
+      }
+      h1 {
+        font:
+          64px/1.08 Georgia,
+          serif;
+        letter-spacing: -2px;
+        max-width: 750px;
+        margin: 22px 0;
+      }
+      h2 {
+        font:
+          32px/1.2 Georgia,
+          serif;
+        margin-top: 0;
+      }
+      h3 {
+        font-size: 15px;
+      }
+      p {
+        max-width: 780px;
+        color: var(--muted);
+      }
+      .hero p {
+        color: #b8cec0;
+        max-width: 650px;
+      }
+      .downloads {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 30px;
+      }
+      .downloads a {
+        padding: 12px 18px;
+        text-decoration: none;
+        border: 1px solid #678271;
+        border-radius: 5px;
+        font-size: 12px;
+      }
+      .downloads a:first-child {
+        background: #e4d6b5;
+        color: var(--ink);
+        border-color: #e4d6b5;
+      }
+      .layout {
+        max-width: 1240px;
+        margin: auto;
+        padding: 48px 36px;
+        display: grid;
+        grid-template-columns: 200px minmax(0, 1fr);
+        gap: 55px;
+      }
+      nav {
+        position: sticky;
+        top: 25px;
+        height: max-content;
+      }
+      nav a {
+        display: block;
+        text-decoration: none;
+        font-size: 12px;
+        color: var(--muted);
+        padding: 9px 0;
+      }
+      section {
+        padding-bottom: 38px;
+        margin-bottom: 38px;
+        border-bottom: 1px solid var(--line);
+        scroll-margin-top: 30px;
+      }
+      .number {
+        color: var(--gold);
+        font-size: 11px;
+        letter-spacing: 2px;
+        display: block;
+        margin-bottom: 12px;
+      }
+      pre {
+        overflow: auto;
+        padding: 24px;
+        background: #102c27;
+        color: #dce8db;
+        border-radius: 8px;
+        font:
+          12px/1.75 ui-monospace,
+          Consolas,
+          monospace;
+        max-height: 550px;
+      }
+      code {
+        font:
+          12px ui-monospace,
+          Consolas,
+          monospace;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+      .card {
+        padding: 22px;
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 7px;
+      }
+      .card p {
+        font-size: 12px;
+        margin-bottom: 0;
+      }
+      .pill {
+        background: #e4ede2;
+        border-radius: 20px;
+        padding: 4px 9px;
+        font-size: 10px;
+        white-space: nowrap;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      td,
+      th {
+        text-align: left;
+        padding: 13px 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      th {
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .note {
+        padding: 18px 22px;
+        background: #ebece1;
+        border-left: 2px solid var(--gold);
+        font-size: 12px;
+      }
+      .flow {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 25px 0;
+      }
+      .flow span {
+        border: 1px solid var(--line);
+        padding: 8px 11px;
+        font-size: 11px;
+        background: #fff;
+      }
+      .fine {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      li {
+        margin-bottom: 10px;
+        font-size: 13px;
+      }
+      footer {
+        padding: 28px 36px;
+        border-top: 1px solid var(--line);
+        text-align: center;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      @media (max-width: 750px) {
+        h1 {
+          font-size: 44px;
+        }
+        .layout {
+          display: block;
+          padding: 30px 22px;
+        }
+        nav {
+          position: static;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 14px;
+          margin-bottom: 30px;
+        }
+        nav a {
+          padding: 0;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .hero {
+          padding: 45px 22px;
+        }
+        header {
+          padding: 22px;
+        }
+        table {
+          display: block;
+          overflow: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a href="/" class="brand" style="text-decoration: none">UTN</a
+      ><span class="tag">PARTNER SANDBOX</span>
+    </header>
+    <div class="hero">
+      <span class="eyebrow">BUILT FOR CONNECTED JOURNEYS</span>
+      <h1>Your travelers.<br />One trusted connection.</h1>
+      <p>
+        Bring document assessment into your Umrah experience. Send the familiar
+        visa-request field groups, invite each traveler, and receive a clear,
+        traceable result.
+      </p>
+      <div class="downloads">
+        <a href="/integration/UTN-INTEGRATION.md">Integration guide ↗</a
+        ><a href="/integration/openapi.json">OpenAPI 3.1 ↓</a
+        ><a href="/integration/postman.json">Postman collection ↓</a
+        ><a href="/integration/example-request.json">Example payload ↓</a>
+      </div>
+    </div>
+    <div class="layout">
+      <nav aria-label="Integration sections">
+        <a href="#start">01 · Connect</a
+        ><a href="#contract">02 · Payload contract</a
+        ><a href="#journey">03 · Traveler journey</a
+        ><a href="#results">04 · Results & callbacks</a
+        ><a href="#test">05 · Test scenarios</a>
+      </nav>
+      <main>
+        <section id="start">
+          <span class="number">01 / CONNECT</span>
+          <h2>A direct server-to-server API.</h2>
+          <p>
+            Use your sandbox partner key in the <code>x-api-key</code> header.
+            The partner API is separate from the presentation login. Store your
+            key on your server.
+          </p>
+          <div class="grid">
+            <div class="card">
+              <h3>Hosted sandbox</h3>
+              <code id="host">https://utn-api.halavalet.workers.dev</code>
+              <p>Dedicated API origin. Append /v1/verification-requests.</p>
+              <p>
+                <a href="https://utn-otn.halavalet.workers.dev"
+                  >OTA presentation</a
+                >
+                ·
+                <a href="https://utn-testenvironment.halavalet.workers.dev/utn/"
+                  >UTN traveler app</a
+                >
+              </p>
+            </div>
+            <div class="card">
+              <h3>Local development</h3>
+              <code>http://localhost:4101/api</code>
+              <p>Start the local UTN service before making requests.</p>
+            </div>
+          </div>
+          <pre>
+POST {baseUrl}/v1/verification-requests
+Content-Type: application/json
+x-api-key: &lt;your-partner-key&gt;
+Idempotency-Key: &lt;unique-stable-submission-key&gt;</pre
+          >
+          <p class="note">
+            This is a prototype sandbox. No government visa submission, real
+            message delivery, payment or issuer authentication is performed.
+          </p>
+        </section>
+        <section id="contract">
+          <span class="number">02 / PAYLOAD CONTRACT</span>
+          <h2>A familiar body. A purposeful extension.</h2>
+          <p>
+            The request preserves <code>groupInfo</code>,
+            <code>package</code> and <code>mutamers</code> from the supplied OTA
+            B2C guide v1.4.6, section 5.16. Use
+            <code>additionalInformation</code> for OTA-only context. Send these
+            groups directly at the root; no <code>visaRequest</code> wrapper is
+            needed.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th>What it contains</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>groupInfo</code></td>
+                <td>
+                  OTA, request, group, operator and external agent references
+                </td>
+              </tr>
+              <tr>
+                <td><code>package</code></td>
+                <td>
+                  Arrival, departure, ground services, housing, transport and
+                  enrichment
+                </td>
+              </tr>
+              <tr>
+                <td><code>mutamers[]</code></td>
+                <td>
+                  Names, passport, residence, nationality, contact and original
+                  disclosure fields
+                </td>
+              </tr>
+              <tr>
+                <td><code>additionalInformation</code></td>
+                <td>
+                  Optional booking context, notification mode and configured
+                  callback URL
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <h3>A complete synthetic example</h3>
+          <p class="fine">
+            Every person, operational identifier and contact is a sample.
+            Country numbers are demonstration ISO values, not verified ministry
+            lookup IDs. The OpenAPI schema lists the field topology; full
+            official conditional validation is not implemented.
+          </p>
+          <pre id="sample" aria-label="Full example request">
+Loading sample payload…</pre
+          >
+          <p class="fine">
+            Empty image/disclosure fields mean those government services are not
+            connected. Never invent disclosure responses. Preserve the
+            case-sensitive <code>Category</code> field on ground services.
+          </p>
+        </section>
+        <section id="journey">
+          <span class="number">03 / TRAVELER JOURNEY</span>
+          <h2>One invitation for each traveler.</h2>
+          <div class="flow">
+            <span>OTA submits</span><span>→ Invitation</span
+            ><span>→ Traveler reviews</span><span>→ Document assessment</span
+            ><span>→ OTA receives result</span>
+          </div>
+          <p>
+            Creation returns request identifiers, per-traveler
+            <code>webUrl</code> and <code>deepLink</code>, notification previews
+            and callback delivery state. Open returned URLs directly. Invitation
+            links expire after seven days and must be treated as bearer
+            credentials.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Traveler category</th>
+                <th>Document</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>gcc_citizen</code></td>
+                <td>National ID or passport</td>
+              </tr>
+              <tr>
+                <td><code>gcc_resident</code></td>
+                <td>Residence permit</td>
+              </tr>
+              <tr>
+                <td><code>schengen_resident</code></td>
+                <td>Residence permit</td>
+              </tr>
+              <tr>
+                <td><code>schengen_visa</code></td>
+                <td>Visa</td>
+              </tr>
+              <tr>
+                <td><code>us_resident</code></td>
+                <td>Residence permit</td>
+              </tr>
+              <tr>
+                <td><code>us_visa</code></td>
+                <td>Visa</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="grid" style="margin-top: 20px">
+            <div class="card">
+              <span class="pill">DEMONSTRATION</span>
+              <h3>Explore all outcomes.</h3>
+              <p>
+                Choose positive, review or rejected scenarios. A document is
+                optional. Results and certificates remain explicitly simulated.
+              </p>
+            </div>
+            <div class="card">
+              <span class="pill">AI-ASSISTED</span>
+              <h3>Read visible evidence.</h3>
+              <p>
+                Requires configured server credentials, consent and
+                PNG/JPEG/WebP up to 5 MB. Extracted fields support visible
+                consistency checks; no authenticity guarantee.
+              </p>
+            </div>
+          </div>
+          <p class="fine">
+            Traveler corrections invalidate the previous assessment credential.
+            Category routing does not establish immigration eligibility. SMS and
+            WhatsApp are notification previews, never claimed deliveries.
+          </p>
+        </section>
+        <section id="results">
+          <span class="number">04 / RESULTS & CALLBACKS</span>
+          <h2>Results you can reconcile.</h2>
+          <pre>
+GET {baseUrl}/v1/verification-requests/{id}
+x-api-key: &lt;your-partner-key&gt;</pre
+          >
+          <p>
+            Each traveler has an independent verification result. Assessment
+            outcomes are <code>verified</code>, <code>needs_review</code> or
+            <code>rejected</code>. Corrections return the assessment to
+            <code>pending</code>. Only verified assessments receive a
+            credential.
+          </p>
+          <p>
+            Configure a callback URL and a separate signing secret with your
+            operator. A requested
+            <code>additionalInformation.callbackUrl</code> must match that
+            configured URL exactly. Missing configuration is reported as
+            <code>not_configured</code>.
+          </p>
+          <pre>
+{
+  "eventId": "&lt;event-id&gt;",
+  "requestId": "&lt;request-id&gt;",
+  "bookingId": "&lt;booking-id&gt;",
+  "invitationId": "&lt;invitation-id&gt;",
+  "otaMutamerId": 1,
+  "verification": { "status": "verified", "revision": 1, "mode": "demo", "simulated": true }
+}</pre
+          >
+          <p class="fine">
+            Envelope illustration; the actual verification includes checks,
+            concerns, scope and any certificate.
+          </p>
+          <div class="card">
+            <h3>Verify before applying.</h3>
+            <p>
+              Read <code>x-utn-timestamp</code> and
+              <code>x-utn-signature</code>. Verify hex HMAC-SHA256 of
+              <code>timestamp + "." + rawBody</code> with the callback secret.
+              Allow a five-minute clock window, compare in constant time,
+              deduplicate <code>eventId</code>, and apply only a newer
+              per-invitation <code>revision</code>.
+            </p>
+          </div>
+          <p>
+            Failed configured callbacks are queued for retry. Polling the GET
+            endpoint remains available for reconciliation. The credential is a
+            signed UTN prototype assessment, not a government certificate or
+            public-key attestation.
+          </p>
+        </section>
+        <section id="test">
+          <span class="number">05 / SANDBOX TESTS</span>
+          <h2>Prove the whole round trip.</h2>
+          <ol>
+            <li>
+              Create one traveler, open the invitation and run a simulated
+              verified result.
+            </li>
+            <li>
+              Verify one traveler in a group and confirm the others remain
+              independent.
+            </li>
+            <li>
+              Exercise review and rejected outcomes; confirm no verified
+              credential appears.
+            </li>
+            <li>
+              Replay the same idempotent request; changing its body should
+              return <code>409</code>.
+            </li>
+            <li>
+              Correct traveler details and confirm invalidation of the previous
+              result.
+            </li>
+            <li>
+              Try AI without configuration: expect <code>503</code>, never a
+              simulated fallback.
+            </li>
+            <li>
+              Check invalid keys, oversized images, expired invitations and
+              disallowed callback URLs.
+            </li>
+            <li>
+              Replay and tamper with callbacks; confirm deduplication, revision
+              ordering and signature checks.
+            </li>
+          </ol>
+          <a href="/integration/UTN-INTEGRATION.md"
+            >Read the complete practical integration guide ↗</a
+          >
+        </section>
+      </main>
+    </div>
+    <footer>
+      UTN · UMRAH TRUSTED NETWORK — Partner sandbox · Synthetic data only
+    </footer>
+    <script>
+      fetch("/integration/example-request.json")
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          return r.json();
+        })
+        .then(
+          (v) =>
+            (document.getElementById("sample").textContent = JSON.stringify(
+              v,
+              null,
+              2,
+            )),
+        )
+        .catch(
+          () =>
+            (document.getElementById("sample").textContent =
+              "Download example-request.json using the link above."),
+        );
+    </script>
+  </body>
+</html>

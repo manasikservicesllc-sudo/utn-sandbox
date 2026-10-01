@@ -1,0 +1,23 @@
+{
+  "name": "manasik-utn-prototype",
+  "account_id": "755fbf7d35e9e2b67cb381f2bedf6509",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-09-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "../dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "single-page-application",
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "STATE", "class_name": "PrototypeState" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PrototypeState"] }],
+  "vars": {
+    "PUBLIC_ORIGIN": "https://utn-otn.halavalet.workers.dev",
+    "UTN_ORIGIN": "https://utn-testenvironment.halavalet.workers.dev",
+    "API_ORIGIN": "https://utn-api.halavalet.workers.dev",
+    "OPENAI_MODEL": "gpt-4.1-mini",
+  },
+}

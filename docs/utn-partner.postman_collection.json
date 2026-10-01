@@ -1,0 +1,81 @@
+{
+  "info": {
+    "name": "UTN Partner Sandbox",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Synthetic demonstration request only. Supply partnerApiKey locally; no keys included."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://utn-api.halavalet.workers.dev"
+    },
+    {
+      "key": "partnerApiKey",
+      "value": ""
+    },
+    {
+      "key": "requestId",
+      "value": ""
+    },
+    {
+      "key": "idempotencyKey",
+      "value": "demo-request-100001"
+    }
+  ],
+  "item": [
+    {
+      "name": "Create verification request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-api-key",
+            "value": "{{partnerApiKey}}"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotencyKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/v1/verification-requests",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"groupInfo\": {\n    \"otaId\": 11,\n    \"otaRequestId\": 100001,\n    \"otaGroupId\": 100001,\n    \"uoId\": 0,\n    \"eaId\": 0,\n    \"eaEmbassyId\": 0,\n    \"eaCountryId\": 784\n  },\n  \"package\": {\n    \"type\": 0,\n    \"customizedPackageId\": null,\n    \"arrivalRoute\": {\n      \"arrivalFlightId\": 0,\n      \"arrivalType\": 1,\n      \"transportation\": {\n        \"category\": 2,\n        \"transportationType\": 1,\n        \"transportationOtaType\": 4,\n        \"price\": 0,\n        \"tripDate\": \"2026-11-15T12:00:00Z\",\n        \"tripNo\": \"DEMO-ARR\",\n        \"transportCompanyId\": 0,\n        \"vehicleMake\": 0,\n        \"vehicleType\": 0,\n        \"instructionsAr\": \"نقل تجريبي\",\n        \"instructionsEn\": \"Sample transfer\"\n      }\n    },\n    \"departureRoute\": {\n      \"departureFlightId\": 0,\n      \"departureType\": 1\n    },\n    \"groundServices\": [\n      {\n        \"Category\": 2,\n        \"code\": \"utn\",\n        \"BRN\": \"DEMO\",\n        \"nameAr\": \"خدمات تجريبية\",\n        \"nameEn\": \"Essential + UTN\",\n        \"descriptionAr\": \"نموذج تجريبي\",\n        \"descriptionEn\": \"Sample ground service\",\n        \"price\": 150\n      }\n    ],\n    \"packageRoutes\": [\n      {\n        \"housing\": [\n          {\n            \"price\": 4204,\n            \"checkInDate\": \"2026-11-15T12:00:00Z\",\n            \"checkOutDate\": \"2026-11-18T12:00:00Z\",\n            \"hotelId\": 0,\n            \"hotelNameAr\": \"فندق نموذجي\",\n            \"hotelNameEn\": \"Sample hotel\",\n            \"hotelAddressAr\": \"مكة المكرمة\",\n            \"hotelAddressEn\": \"Makkah\",\n            \"hotelDescriptionAr\": \"إقامة تجريبية\",\n            \"hotelDescriptionEn\": \"Sample stay\",\n            \"reservedHeadCount\": 1,\n            \"hasFoodServices\": true,\n            \"foodProviderType\": 1,\n            \"foodServiceProviderId\": 0,\n            \"breakfastDescription\": \"Sample breakfast\",\n            \"lunchDescription\": \"\",\n            \"dinnerDescription\": \"\",\n            \"otherMealDescription\": \"\"\n          }\n        ],\n        \"transportation\": [],\n        \"additionalServices\": [],\n        \"enrichmentServices\": []\n      }\n    ]\n  },\n  \"mutamers\": [\n    {\n      \"otaMutamerId\": 1,\n      \"maritalStatus\": 2,\n      \"firstNameEn\": \"Omar\",\n      \"fatherNameEn\": \"Ahmed\",\n      \"grandFatherNameEn\": \"Ali\",\n      \"familyNameEn\": \"Hassan\",\n      \"firstNameAr\": \"عمر\",\n      \"fatherNameAr\": \"أحمد\",\n      \"grandFatherNameAr\": \"علي\",\n      \"familyNameAr\": \"حسن\",\n      \"nationalityId\": 818,\n      \"birthCountryId\": 818,\n      \"birthCityName\": \"Cairo\",\n      \"birthDate\": \"1991-05-12T12:00:00Z\",\n      \"passportNumber\": \"DEMO10001\",\n      \"passportTypeId\": 1,\n      \"passportIssueDate\": \"2024-01-15T12:00:00Z\",\n      \"passportExpiryDate\": \"2030-01-14T12:00:00Z\",\n      \"passportIssuingCity\": \"Cairo\",\n      \"passportIssuingCountryId\": 818,\n      \"gender\": 1,\n      \"relativeRelationId\": 0,\n      \"educationalLevel\": 4,\n      \"profession\": \"Architect\",\n      \"mobileNumber\": \"+971500000000\",\n      \"emailAddress\": \"traveler@example.com\",\n      \"currentCountryId\": 784,\n      \"iqamaNo\": \"DEMO-RES-1\",\n      \"iqamaExpiryDate\": \"2028-01-01T12:00:00Z\",\n      \"disclosureAnswers\": [],\n      \"personalPicture\": \"\",\n      \"passportPicture\": \"\",\n      \"personalIqamaPicture\": \"\"\n    }\n  ],\n  \"additionalInformation\": {\n    \"prototype\": true,\n    \"packageName\": \"The Signature Journey\",\n    \"consentToShare\": true,\n    \"lookupCodes\": \"Sample ISO numeric country values; not verified ministry lookup IDs\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200 || pm.response.code === 201) { pm.collectionVariables.set('requestId', pm.response.json().id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Read verification request",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{partnerApiKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/v1/verification-requests/{{requestId}}"
+      }
+    }
+  ]
+}

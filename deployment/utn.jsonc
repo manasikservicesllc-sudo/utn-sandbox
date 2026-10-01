@@ -1,0 +1,8 @@
+{
+  "name": "utn-testenvironment",
+  "account_id": "755fbf7d35e9e2b67cb381f2bedf6509",
+  "main": "entry.mjs",
+  "compatibility_date": "2026-09-10",
+  "services": [{ "binding": "CORE", "service": "manasik-utn-prototype" }],
+  "vars": { "ENTRY": "utn" },
+}
