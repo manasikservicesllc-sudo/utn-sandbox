@@ -158,6 +158,8 @@ async function request(path: string, options?: RequestInit) {
     headers: { "Content-Type": "application/json", ...options?.headers },
   });
   const data = await response.json().catch(() => ({}));
+  if (response.status === 503 && /AI is not configured|OPENAI_API_KEY/.test(String(data.error)))
+    throw new Error("الفحص الذكي غير مفعّل حاليًا. يمكنك استخدام المحاكاة لتجربة الخطوات. AI assessment is not enabled yet; demonstration mode remains available.");
   if (!response.ok)
     throw new Error(
       typeof data.error === "string"
@@ -738,13 +740,14 @@ export default function App() {
                       {(["demo", "ai"] as const).map((item) => (
                         <Pressable
                           accessibilityRole="radio"
-                          accessibilityState={{ checked: mode === item }}
+                          accessibilityState={{ checked: mode === item, disabled: item === "ai" && invitation?.aiAvailable !== true }}
+                          disabled={item === "ai" && invitation?.aiAvailable !== true}
                           key={item}
                           onPress={() => {
                             setMode(item);
                             setConsent(false);
                           }}
-                          style={[s.mode, mode === item && s.modeActive]}
+                          style={[s.mode, mode === item && s.modeActive, item === "ai" && invitation?.aiAvailable !== true && { opacity: 0.5 }]}
                         >
                           <Text
                             style={[
@@ -759,6 +762,13 @@ export default function App() {
                         </Pressable>
                       ))}
                     </View>
+                    {invitation?.aiAvailable !== true && (
+                      <View style={s.required}>
+                        <Text style={s.arabicCard}>الفحص الذكي غير مفعّل حاليًا</Text>
+                        <Text style={s.arabic}>يمكنك تجربة الخطوات بخيار «محاكاة». هذه نتيجة تجريبية وليست فحصًا حقيقيًا للوثيقة.</Text>
+                        <Text style={s.smallText}>AI assessment is not enabled yet. Demonstration mode is available to explore the journey with an explicitly simulated result.</Text>
+                      </View>
+                    )}
                     <Text style={s.modeExplanation}>
                       {mode === "demo"
                         ? "A simulated outcome to explore the experience. No document authenticity assessment is performed."
