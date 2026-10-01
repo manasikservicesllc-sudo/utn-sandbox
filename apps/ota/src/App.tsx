@@ -1169,10 +1169,8 @@ export default function App() {
                   <span>WhatsApp</span>
                   <small>SIMULATED · NOT SENT</small>
                 </div>
-                <p>
-                  {booking?.notifications?.[0]?.preview?.split(
-                    "Continue securely:",
-                  )[0] ||
+                <p dir="auto" style={{ whiteSpace: "pre-line", overflowWrap: "anywhere" }}>
+                  {booking?.notifications?.[0]?.preview ||
                     "Welcome to UTN. Your personal document assessment is ready. Continue with the invitation above to begin."}
                 </p>
                 <small>

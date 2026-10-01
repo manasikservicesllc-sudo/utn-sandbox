@@ -502,7 +502,7 @@ export function createRuntime(options = {}) {
                 extra.notificationMode === "demo"
                   ? "simulated"
                   : "not_configured",
-              preview: `Welcome ${applicant.firstNameEn}. Your UTN document assessment is ready. Continue securely: ${invite.webUrl}`,
+              preview: `مرحبًا بك في شبكة UTN لخدمات العمرة.\nاستلمنا طلبك رقم ${internal ? extra.otaBookingId : id}.\nأكمل التحقق من مستنداتك عبر رابطك الخاص:\n${invite.webUrl}\nالرابط صالح لمدة 7 أيام. لا تشاركه مع الآخرين.`,
               createdAt: r.createdAt,
               sentAt: null,
             });

@@ -75,6 +75,8 @@ test("multi-applicant round trip, scoped invitation, signed certificate and pers
   assert.ok(b.data.utnRequestId.startsWith("REQ-"));
   assert.equal(b.data.notifications.length, 4);
   assert.equal(b.data.notifications[0].status, "simulated");
+  assert.ok(b.data.notifications[0].preview.includes(b.data.id));
+  assert.ok(b.data.notifications[0].preview.includes(b.data.invitations[0].webUrl));
   assert.equal(
     (await call(s.otaUrl + "/api/bookings/" + b.data.id)).status,
     401,
