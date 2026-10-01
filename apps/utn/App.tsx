@@ -942,10 +942,9 @@ export default function App() {
                           { marginTop: 20, backgroundColor: "#f5f8f3" },
                         ]}
                       >
-                        <Text style={s.eyebrow}>READ FROM YOUR DOCUMENT</Text>
+                        <Text style={s.eyebrow}>{(result.mode || mode) === "demo" ? "DEMONSTRATION DATA" : "READ FROM YOUR DOCUMENT"}</Text>
                         <Text style={s.smallText}>
-                          Visible evidence extracted by the AI model. Check it
-                          against your document.
+                          {(result.mode || mode) === "demo" ? "Sample fields for this demonstration. No AI document reading was performed." : "Visible evidence extracted by the AI model. Check it against your document."}
                         </Text>
                         {[
                           ["fullName", "Name"],
