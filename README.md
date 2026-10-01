@@ -1,6 +1,14 @@
 # Manasik × UTN — connected Umrah sandbox
 
+Live: [OTA](https://ota.utn-staging.com) · [UTN web](https://utn-staging.com/utn/) · [Partner API](https://api.utn-staging.com/v1) · [Integration portal](https://utn-staging.com/sandbox.html).
+
 A working OTA simulator, an Expo React Native UTN app (iOS + web), and a partner-facing UTN API. Built for an executive demonstration with synthetic data, with an explicit separation between simulated assessment and OpenAI vision assessment.
+
+## Public staging access
+
+The hosted staging frontends and partner API are deliberately public for developer evaluation. No presentation password or API key is required in `PUBLIC_SANDBOX=true` mode, and cross-origin calls are accepted. The same backend retains API-key enforcement when this flag is false. Invitation links remain scoped to one traveler. Use synthetic records; this is not production authentication.
+
+Integrate with `https://api.utn-staging.com/v1/verification-requests` over HTTPS port 443. No fixed server IP is required. The **Integration guide** in the UTN footer links to examples, OpenAPI and Postman.
 
 ## Start locally
 

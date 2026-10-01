@@ -58,7 +58,7 @@ export function json(res, status, value) {
 export function handler(route, origins) {
   return async (req, res) => {
     const origin = req.headers.origin;
-    if (origin && !origins.includes(origin))
+    if (origin && !origins.includes("*") && !origins.includes(origin))
       return json(res, 403, { error: "Origin not allowed" });
     if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");

@@ -1,5 +1,7 @@
 # OTA ↔ UTN prototype services
 
+Public staging explicitly enables `PUBLIC_SANDBOX=true` (`createRuntime({publicSandbox:true})`). In this mode the partner intake and status APIs accept requests without `X-API-Key`, and CORS reflects any requesting origin without enabling credentials. Invitation endpoints still require their opaque token and callback signatures remain enforced. With `PUBLIC_SANDBOX=false` or omitted, partner API keys and the configured origin list are required as documented below. The public flag does not configure an AI provider or change AI request limits.
+
 Run `node server/start.mjs` from the repository root. Node 22 is supported; no server packages are required. Both services listen on loopback: OTA 4100, UTN 4101. Copy `.env.example` to `.env` for optional AI settings. Never add an OpenAI key to browser or Expo configuration.
 
 The primary partner intake is **`POST UTN /api/v1/verification-requests`**, authenticated with `X-API-Key: <SANDBOX_PARTNER_API_KEY>`. Send the direct guide-shaped body `{groupInfo,package,mutamers,additionalInformation?}` without a `visaRequest` wrapper. `GET UTN /api/v1/verification-requests/:id` with the same key returns current invitations, verification results, certificates, notification previews and callback delivery status. The OTA demonstration calls this actual partner intake. Keys are server-only and this sandbox represents one registered demo tenant.

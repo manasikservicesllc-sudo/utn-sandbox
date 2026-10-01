@@ -15,9 +15,10 @@
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PrototypeState"] }],
   "vars": {
-    "PUBLIC_ORIGIN": "https://utn-otn.halavalet.workers.dev",
-    "UTN_ORIGIN": "https://utn-testenvironment.halavalet.workers.dev",
-    "API_ORIGIN": "https://utn-api.halavalet.workers.dev",
+    "PUBLIC_SANDBOX": "true",
+    "PUBLIC_ORIGIN": "https://ota.utn-staging.com",
+    "UTN_ORIGIN": "https://utn-staging.com",
+    "API_ORIGIN": "https://api.utn-staging.com",
     "OPENAI_MODEL": "gpt-4.1-mini",
   },
 }

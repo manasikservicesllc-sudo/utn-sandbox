@@ -2,12 +2,12 @@
   "info": {
     "name": "UTN Partner Sandbox",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Synthetic demonstration request only. Supply partnerApiKey locally; no keys included."
+    "description": "Public staging accepts synthetic requests without a key. For protected deployments enable the disabled x-api-key header and supply partnerApiKey locally. No keys included."
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://utn-api.halavalet.workers.dev"
+      "value": "https://api.utn-staging.com"
     },
     {
       "key": "partnerApiKey",
@@ -34,7 +34,8 @@
           },
           {
             "key": "x-api-key",
-            "value": "{{partnerApiKey}}"
+            "value": "{{partnerApiKey}}",
+            "disabled": true
           },
           {
             "key": "Idempotency-Key",
@@ -71,7 +72,8 @@
         "header": [
           {
             "key": "x-api-key",
-            "value": "{{partnerApiKey}}"
+            "value": "{{partnerApiKey}}",
+            "disabled": true
           }
         ],
         "url": "{{baseUrl}}/v1/verification-requests/{{requestId}}"

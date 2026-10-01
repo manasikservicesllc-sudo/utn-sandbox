@@ -337,11 +337,11 @@ const spec = {
   servers: [
     { url: "http://localhost:4101/api", description: "Local UTN service" },
     {
-      url: "https://utn-api.halavalet.workers.dev",
+      url: "https://api.utn-staging.com",
       description: "Hosted partner sandbox API",
     },
   ],
-  security: [{ PartnerApiKey: [] }],
+  security: [{}, { PartnerApiKey: [] }],
   paths: {
     "/v1/verification-requests": {
       post: {
@@ -404,10 +404,10 @@ const collection = {
     schema:
       "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     description:
-      "Synthetic demonstration request only. Supply partnerApiKey locally; no keys included.",
+      "Public staging accepts synthetic requests without a key. For protected deployments enable the disabled x-api-key header and supply partnerApiKey locally. No keys included.",
   },
   variable: [
-    { key: "baseUrl", value: "https://utn-api.halavalet.workers.dev" },
+    { key: "baseUrl", value: "https://api.utn-staging.com" },
     { key: "partnerApiKey", value: "" },
     { key: "requestId", value: "" },
     { key: "idempotencyKey", value: "demo-request-100001" },
@@ -419,7 +419,7 @@ const collection = {
         method: "POST",
         header: [
           { key: "Content-Type", value: "application/json" },
-          { key: "x-api-key", value: "{{partnerApiKey}}" },
+          { key: "x-api-key", value: "{{partnerApiKey}}", disabled: true },
           { key: "Idempotency-Key", value: "{{idempotencyKey}}" },
         ],
         url: "{{baseUrl}}/v1/verification-requests",
@@ -434,7 +434,7 @@ const collection = {
       name: "Read verification request",
       request: {
         method: "GET",
-        header: [{ key: "x-api-key", value: "{{partnerApiKey}}" }],
+        header: [{ key: "x-api-key", value: "{{partnerApiKey}}", disabled: true }],
         url: "{{baseUrl}}/v1/verification-requests/{{requestId}}",
       },
     },

@@ -1,30 +1,21 @@
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 const local = process.argv.includes("--local");
 const base = local
   ? "http://localhost:8787"
-  : "https://utn-otn.halavalet.workers.dev";
-const apiBase = local ? base : "https://utn-api.halavalet.workers.dev";
-const password = local
-  ? "local-adapter-test"
-  : JSON.parse(readFileSync(".data/cloudflare-secrets.json", "utf8"))
-      .DEMO_PASSWORD;
-const partnerKey = local
-  ? "local-partner-test"
-  : JSON.parse(readFileSync(".data/cloudflare-secrets.json", "utf8"))
-      .SANDBOX_PARTNER_API_KEY;
-assert.equal((await fetch(base + "/api/health")).status, 401);
-const login = await fetch(base + "/presenter", {
-  method: "POST",
-  body: new URLSearchParams({ password }),
-  redirect: "manual",
-});
-assert.equal(login.status, 303);
-const cookie = login.headers.get("set-cookie").split(";")[0];
+  : "https://ota.utn-staging.com";
+const apiBase = local ? base : "https://api.utn-staging.com";
+const partnerHeaders=local?{"x-api-key":"local-partner-test"}:{};
+assert.equal((await fetch(base + "/api/health")).status, local?401:200);
+let cookie="";
+if(local){
+ const login=await fetch(base+"/presenter",{method:"POST",body:new URLSearchParams({password:"local-adapter-test"}),redirect:"manual"});
+ assert.equal(login.status,303);cookie=login.headers.get("set-cookie").split(";")[0];
+}else{assert.equal((await fetch(base)).status,200);}
 async function call(path, value, headers = {}) {
   const response = await fetch(base + path, {
     method: value ? "POST" : "GET",
-    headers: { Cookie: cookie, "Content-Type": "application/json", ...headers },
+    headers: { ...(cookie?{Cookie:cookie}:{}), "Content-Type": "application/json", ...headers },
     ...(value ? { body: JSON.stringify(value) } : {}),
   });
   const data = await response.json();
@@ -80,11 +71,11 @@ assert.equal(
       body: "{}",
     })
   ).status,
-  401,
+  local?401:400,
 );
 const external = await fetch(apiBase + externalPath, {
   method: "POST",
-  headers: { "Content-Type": "application/json", "x-api-key": partnerKey },
+  headers: { "Content-Type": "application/json", ...partnerHeaders, ...(local?{}:{Origin:"https://external-partner.example"}) },
   body: JSON.stringify({
     groupInfo: { otaGroupId: 99101 },
     package: { otaPackageId: 99102 },
@@ -112,13 +103,13 @@ assert.equal(native.status, 200);
 assert.equal((await native.json()).applicant.firstNameEn, "Sandbox");
 const requestState = await fetch(
   apiBase + externalPath + "/" + externalData.id,
-  { headers: { "x-api-key": partnerKey } },
+  { headers: partnerHeaders },
 );
 assert.equal(requestState.status, 200);
 assert.ok(externalData.notifications.every((n) => n.status === "simulated"));
 if (!local) {
   const shell = await fetch(
-    "https://utn-testenvironment.halavalet.workers.dev/utn/",
+    "https://utn-staging.com/utn/",
   );
   assert.equal(shell.status, 200);
   const html = await shell.text();
@@ -131,7 +122,7 @@ if (!local) {
   const cors = await fetch(apiBase + nativePath, {
     method: "OPTIONS",
     headers: {
-      Origin: "https://utn-testenvironment.halavalet.workers.dev",
+      Origin: "https://external-partner.example",
       "Access-Control-Request-Method": "POST",
       "Access-Control-Request-Headers": "content-type",
     },
@@ -139,15 +130,16 @@ if (!local) {
   assert.equal(cors.status, 204);
   assert.equal(
     cors.headers.get("access-control-allow-origin"),
-    "https://utn-testenvironment.halavalet.workers.dev",
+    "https://external-partner.example",
   );
+  const guide=await fetch("https://utn-staging.com/integration-guide");assert.equal(guide.status,200);assert.ok((await guide.text()).includes("api.utn-staging.com"));
 }
 writeFileSync(
   ".data/cloudflare-smoke-result.json",
   JSON.stringify({
     base,
     checkedAt: new Date().toISOString(),
-    gate: true,
+    publicSandbox: !local,
     ota: true,
     utn: true,
     callback: true,
@@ -158,5 +150,5 @@ writeFileSync(
   }),
 );
 console.log(
-  "PASS: password gate, both APIs, invitation, verification, callback, booking, certificate, external partner key and native scoped access.",
+  "PASS: staging access mode, both APIs, invitation, verification, callback, booking, certificate, external intake, CORS, guide and native scoped access.",
 );

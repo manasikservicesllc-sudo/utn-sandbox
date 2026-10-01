@@ -11,11 +11,12 @@
       "description": "Local UTN service"
     },
     {
-      "url": "https://utn-api.halavalet.workers.dev",
+      "url": "https://api.utn-staging.com",
       "description": "Hosted partner sandbox API"
     }
   ],
   "security": [
+    {},
     {
       "PartnerApiKey": []
     }

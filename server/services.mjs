@@ -16,6 +16,7 @@ import {
 import { reviewImage } from "./ai.mjs";
 
 export function createRuntime(options = {}) {
+  const publicSandbox = options.publicSandbox ?? process.env.PUBLIC_SANDBOX === "true";
   const createStore = options.store || store;
   const dir =
     options.dataDir || process.env.DATA_DIR || join(process.cwd(), "data");
@@ -60,7 +61,7 @@ export function createRuntime(options = {}) {
     model: options.model || process.env.OPENAI_MODEL || "gpt-4.1-mini",
   };
   const origins =
-    options.origins ||
+    publicSandbox ? ["*"] : options.origins ||
     (
       process.env.ALLOWED_ORIGINS ||
       "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8081,http://127.0.0.1:8081"
@@ -422,12 +423,13 @@ export function createRuntime(options = {}) {
         status: "ok",
         aiAvailable: !!config.apiKey,
         model: config.model,
+        publicSandbox,
       });
     if (
       path === "/api/v1/verification-requests" ||
       /^\/api\/v1\/verification-requests\/[^/]+$/.test(path)
     ) {
-      if (!equal(req.headers["x-api-key"], partnerApiKey))
+      if (!publicSandbox && !equal(req.headers["x-api-key"], partnerApiKey))
         fail(401, "Valid partner X-API-Key required");
       if (req.method === "GET") {
         const r = utn.data.requests[path.split("/").at(-1)];

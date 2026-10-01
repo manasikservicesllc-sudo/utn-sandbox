@@ -9,20 +9,50 @@ This is an executable prototype contract, not a government visa service. It foll
 | Environment    | Base URL                                |
 | -------------- | --------------------------------------- |
 | Local UTN      | `http://localhost:4101/api`             |
-| Hosted sandbox | `https://utn-api.halavalet.workers.dev` |
+| Hosted sandbox | `https://api.utn-staging.com` |
 
-The OTA presentation is at [utn-otn.halavalet.workers.dev](https://utn-otn.halavalet.workers.dev), the traveler application is at [utn-testenvironment.halavalet.workers.dev/utn/](https://utn-testenvironment.halavalet.workers.dev/utn/), and the partner API has its own origin shown above. The hosted creation endpoint is `https://utn-api.halavalet.workers.dev/v1/verification-requests`.
+The OTA presentation is at [ota.utn-staging.com](https://ota.utn-staging.com), the traveler application is at [utn-staging.com/utn/](https://utn-staging.com/utn/), and the partner API has its own origin shown above. The hosted creation endpoint is `https://api.utn-staging.com/v1/verification-requests`.
 
-Obtain the partner key from the operator. Send `x-api-key` on every partner request. The operator configures `SANDBOX_PARTNER_API_KEY` server-side; never place it in an OTA web bundle or mobile app. The presentation password is separate from partner API authentication.
+**Public staging is open for synthetic integration tests without an API key.** This applies when the operator enables `PUBLIC_SANDBOX=true`. For protected deployments (`PUBLIC_SANDBOX=false`), obtain the partner key and send `x-api-key` on every partner request. The operator configures `SANDBOX_PARTNER_API_KEY` server-side; never place protected credentials in an OTA web bundle or mobile app. Public staging must contain synthetic data only.
+
+Connect using HTTPS to `api.utn-staging.com` on port **443**. There is no dedicated static IP supplied for this Cloudflare-hosted service. Use the hostname for DNS, TLS and any hostname-based egress policy; do not pin a guessed IP. Public staging accepts browser origins without credentials; protected mode restricts origins. Invitation tokens and signed callbacks remain required in both modes.
+
+Public developer resources: [Integration portal](https://utn-staging.com/sandbox.html) · [Source on GitHub](https://github.com/manasikservicesllc-sudo/utn-sandbox).
 
 ```http
 POST {baseUrl}/v1/verification-requests
 Content-Type: application/json
-x-api-key: <your-partner-key>
 Idempotency-Key: <unique-stable-submission-key>
 ```
 
 Send the root object `{groupInfo, package, mutamers, additionalInformation?}` directly. **Do not wrap it in `visaRequest`** for the partner API. The prototype OTA's internal booking endpoint uses a different wrapper.
+
+Public staging quick start (no key):
+
+```sh
+curl -fsS https://utn-staging.com/integration/example-request.json -o example-request.json
+curl -X POST https://api.utn-staging.com/v1/verification-requests \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: my-synthetic-test-001' \
+  --data-binary @example-request.json
+```
+
+Use `curl.exe` on Windows if the shell aliases `curl`. The POST can also run from your own server-side JavaScript integration using the complete example:
+
+```js
+const payload = await fetch('https://utn-staging.com/integration/example-request.json')
+  .then(response => response.json());
+const response = await fetch('https://api.utn-staging.com/v1/verification-requests', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+  body: JSON.stringify(payload)
+});
+if (!response.ok) throw new Error(await response.text());
+const request = await response.json();
+console.log(request.id, request.invitations.map(invitation => invitation.webUrl));
+```
+
+For protected deployments add `x-api-key` on the server only. The Postman collection disables this header by default; enable it and fill `partnerApiKey` when testing protected mode.
 
 Use [example-request.json](example-request.json), [openapi.json](openapi.json), or [the Postman collection](postman.json). All example people, identifiers, phone numbers, hotels and operational references are synthetic. Country numbers are sample ISO numeric values, **not confirmed ministry lookup identifiers**. Replace all lookup values using your authenticated official lookup integration before government submission. This sandbox makes no government submission.
 
@@ -54,7 +84,6 @@ Each invitation contains `{id, token, otaMutamerId, webUrl, deepLink, status, ce
 
 ```http
 GET {baseUrl}/v1/verification-requests/{id}
-x-api-key: <your-partner-key>
 ```
 
 Use this endpoint to reconcile callback delivery or display the latest per-traveler state. Status may differ between travelers in the same group. Do not mark the whole group verified after only one traveler completes.
@@ -125,7 +154,7 @@ Partner callbacks use their own signing secret, separate from `x-api-key`. Keep 
 4. Repeat the exact idempotent request; then change a field under the same key and expect `409`.
 5. Correct the traveler after assessment; confirm the old credential is invalidated and a newer pending revision appears.
 6. Use AI with a configured server key and a synthetic image; check extracted evidence. Without a key expect `503`, not success.
-7. Send wrong/missing partner key, invalid image, oversized input, expired invitation and disallowed callback URL; verify useful errors.
+7. In protected mode, send a wrong/missing partner key. In both modes test invalid images, oversized input, expired invitations and disallowed callback URLs; verify useful errors.
 8. Retry a signed event, send a stale revision and alter the body; confirm no duplicate state change, no rollback and rejection of the altered signature.
 
 The prototype has no real payments, government submission, issuer authentication, production customer identity, SMS delivery or reviewer console. These are explicit integration boundaries, not hidden successful operations.

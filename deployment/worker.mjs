@@ -60,6 +60,7 @@ export class PrototypeState extends DurableObject {
       dataDir: "/",
       store,
       secret: env.SERVICE_SECRET,
+      publicSandbox: env.PUBLIC_SANDBOX === "true",
       partnerApiKey: env.SANDBOX_PARTNER_API_KEY,
       partnerCallbackUrl: env.PARTNER_CALLBACK_URL,
       partnerCallbackSecret: env.PARTNER_CALLBACK_SECRET,
@@ -129,7 +130,8 @@ export class PrototypeState extends DurableObject {
 const login = `<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Manasik · Private presentation</title><style>body{margin:0;background:#102b29;color:#efe9da;font:16px system-ui;display:grid;place-items:center;min-height:100vh}main{max-width:360px;padding:40px}h1{font:46px Georgia}input,button{box-sizing:border-box;width:100%;padding:16px;border-radius:9px;margin:10px 0;border:1px solid #657976}button{background:#d9b574;color:#102b29;font-weight:bold;cursor:pointer}p{line-height:1.7;color:#c3ceca}</style><main><small>MANASIK × UTN</small><h1>A journey built<br>on trust.</h1><p>Private prototype presentation. Enter your presentation access code to continue.</p><form method="post" action="/presenter"><input type="password" name="password" required placeholder="Presentation access code" autocomplete="current-password"><button>Enter experience →</button></form></main></html>`;
 export default {
   async fetch(request, env) {
-    if (!env.DEMO_PASSWORD || !env.SERVICE_SECRET)
+    const publicSandbox = env.PUBLIC_SANDBOX === "true";
+    if ((!publicSandbox && !env.DEMO_PASSWORD) || !env.SERVICE_SECRET)
       return new Response("Presentation is not configured", { status: 503 });
     const url = new URL(request.url);
     // Partner requests authenticate inside the UTN service; scoped invitations use
@@ -141,7 +143,7 @@ export default {
       /^\/api\/utn(\/api\/invitations\/[^/]+(?:\/(?:verify|certificate))?)$/,
     );
     if (partner || invitation) {
-      if (partner && !env.SANDBOX_PARTNER_API_KEY)
+      if (partner && !publicSandbox && !env.SANDBOX_PARTNER_API_KEY)
         return new Response(
           JSON.stringify({ error: "Partner sandbox is not configured" }),
           { status: 503, headers: { "content-type": "application/json" } },
@@ -157,7 +159,7 @@ export default {
     // its scoped token. This lets invited pilgrims enter without presenter access.
     if (url.pathname === "/utn" || url.pathname.startsWith("/utn/"))
       return env.ASSETS.fetch(request);
-    if (url.pathname === "/presenter" && request.method === "POST") {
+    if (!publicSandbox && url.pathname === "/presenter" && request.method === "POST") {
       const form = await request.formData();
       if (!equal(String(form.get("password") || ""), env.DEMO_PASSWORD))
         return new Response(login, {
@@ -183,7 +185,7 @@ export default {
         ?.match(/(?:^|;\s*)utn_presenter=([^;]+)/)?.[1] || "";
     const [expiry, signature] = cookie.split(".");
     if (
-      !(
+      !publicSandbox && !(
         Number(expiry) > Date.now() &&
         equal(signature, sign(expiry || "", env.DEMO_PASSWORD))
       )
@@ -211,6 +213,10 @@ export default {
           request,
         ),
       );
+    }
+    if (url.pathname === "/integration-guide" || url.pathname === "/integration-guide/") {
+      url.pathname = "/sandbox.html";
+      return env.ASSETS.fetch(new Request(url, request));
     }
     return env.ASSETS.fetch(request);
   },

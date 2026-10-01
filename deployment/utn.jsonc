@@ -4,5 +4,7 @@
   "main": "entry.mjs",
   "compatibility_date": "2026-09-10",
   "services": [{ "binding": "CORE", "service": "manasik-utn-prototype" }],
-  "vars": { "ENTRY": "utn" },
+  "workers_dev": true,
+  "routes": [{"pattern":"utn-staging.com","custom_domain":true,"zone_id":"215ecabe21d0f0f9f3211bd7a4c314a4"}],
+  "vars": { "ENTRY": "utn", "CANONICAL_ORIGIN":"https://utn-staging.com" },
 }

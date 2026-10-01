@@ -1,6 +1,8 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (env.CANONICAL_ORIGIN && url.origin !== env.CANONICAL_ORIGIN)
+      return Response.redirect(env.CANONICAL_ORIGIN + url.pathname + url.search, 308);
     if (env.ENTRY === "utn" && url.pathname === "/")
       return Response.redirect(url.origin + "/utn/" + url.search, 302);
     if (env.ENTRY === "api") {
@@ -20,6 +22,7 @@ export default {
             headers: {
               "Content-Type": "application/json",
               "Cache-Control": "no-store",
+              "Access-Control-Allow-Origin": "*",
             },
           },
         );

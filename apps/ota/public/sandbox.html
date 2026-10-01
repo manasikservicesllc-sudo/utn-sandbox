@@ -302,21 +302,21 @@
           <span class="number">01 / CONNECT</span>
           <h2>A direct server-to-server API.</h2>
           <p>
-            Use your sandbox partner key in the <code>x-api-key</code> header.
-            The partner API is separate from the presentation login. Store your
-            key on your server.
+            Public staging is open for synthetic tests without an API key.
+            Protected deployments require <code>x-api-key</code>; keep that key
+            on your server. Invitation links and callback signatures still apply.
           </p>
           <div class="grid">
             <div class="card">
               <h3>Hosted sandbox</h3>
-              <code id="host">https://utn-api.halavalet.workers.dev</code>
+              <code id="host">https://api.utn-staging.com</code>
               <p>Dedicated API origin. Append /v1/verification-requests.</p>
               <p>
-                <a href="https://utn-otn.halavalet.workers.dev"
+                <a href="https://ota.utn-staging.com"
                   >OTA presentation</a
                 >
                 ·
-                <a href="https://utn-testenvironment.halavalet.workers.dev/utn/"
+                <a href="https://utn-staging.com/utn/"
                   >UTN traveler app</a
                 >
               </p>
@@ -330,13 +330,21 @@
           <pre>
 POST {baseUrl}/v1/verification-requests
 Content-Type: application/json
-x-api-key: &lt;your-partner-key&gt;
 Idempotency-Key: &lt;unique-stable-submission-key&gt;</pre
           >
           <p class="note">
             This is a prototype sandbox. No government visa submission, real
             message delivery, payment or issuer authentication is performed.
           </p>
+          <p>Connect to <code>api.utn-staging.com</code> using HTTPS on port <strong>443</strong>. No dedicated static IP is provided. Use the hostname for DNS, TLS and egress policies.</p>
+          <h3>Try the complete sample</h3>
+          <pre>curl -fsS https://utn-staging.com/integration/example-request.json -o example-request.json
+curl -X POST https://api.utn-staging.com/v1/verification-requests \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: my-synthetic-test-001' \
+  --data-binary @example-request.json</pre>
+          <p class="fine">Use curl.exe on Windows when curl is a shell alias. Public staging is enabled with PUBLIC_SANDBOX=true. Private mode retains key authentication and origin restrictions.</p>
+          <p><a href="https://github.com/manasikservicesllc-sudo/utn-sandbox">Explore the source on GitHub ↗</a></p>
         </section>
         <section id="contract">
           <span class="number">02 / PAYLOAD CONTRACT</span>
@@ -481,7 +489,7 @@ Loading sample payload…</pre
           <h2>Results you can reconcile.</h2>
           <pre>
 GET {baseUrl}/v1/verification-requests/{id}
-x-api-key: &lt;your-partner-key&gt;</pre
+</pre
           >
           <p>
             Each traveler has an independent verification result. Assessment
@@ -558,7 +566,7 @@ x-api-key: &lt;your-partner-key&gt;</pre
               simulated fallback.
             </li>
             <li>
-              Check invalid keys, oversized images, expired invitations and
+              In protected mode check invalid keys; in both modes check oversized images, expired invitations and
               disallowed callback URLs.
             </li>
             <li>

@@ -16,6 +16,7 @@ async function setup(t, options = {}) {
     secret,
     apiKey: "",
     partnerApiKey: "test-partner-key",
+    publicSandbox: false,
     ...options,
   });
   t.after(async () => {
@@ -406,4 +407,21 @@ test("applicant corrections revoke certificate and signed external callbacks use
     body: JSON.stringify({ applicant: { otaMutamerId: "999" } }),
   });
   assert.equal(bad.status, 400);
+});
+
+test('explicit public sandbox permits no-key partner intake and any origin while retaining token scopes', async t => {
+  const s = await setup(t, {publicSandbox:true});
+  const origin='https://external-developer.example';
+  const url=s.utnUrl+'/api/v1/verification-requests';
+  const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Origin:origin},body:JSON.stringify(booking().visaRequest)});
+  assert.equal(response.status,201);
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'),origin);
+  const request=await response.json();
+  assert.equal((await call(url+'/'+request.id,null,{Origin:origin})).status,200);
+  assert.equal((await call(s.utnUrl+'/api/invitations/not-a-valid-token',null,{Origin:origin})).status,404);
+  assert.equal((await call(s.otaUrl+'/api/webhooks/utn',{bookingId:'fake'},{Origin:origin})).status,401);
+  assert.equal((await call(s.utnUrl+'/api/health')).data.publicSandbox,true);
+  const preflight=await fetch(url,{method:'OPTIONS',headers:{Origin:origin,'Access-Control-Request-Method':'POST'}});
+  assert.equal(preflight.status,204);
+  assert.equal(preflight.headers.get('Access-Control-Allow-Origin'),origin);
 });

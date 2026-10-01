@@ -511,6 +511,7 @@ export default function App() {
                       ))}
                     </View>
                     <Pressable
+                      accessibilityRole="button"
                       onPress={() => {
                         setCorrections(
                           Object.fromEntries(
@@ -634,7 +635,7 @@ export default function App() {
                     <Button onPress={() => setStep(2)}>
                       Continue to document check →
                     </Button>
-                    <Pressable onPress={() => setStep(0)}>
+                    <Pressable accessibilityRole="button" onPress={() => setStep(0)}>
                       <Text style={s.back}>← Back to your details</Text>
                     </Pressable>
                   </>
@@ -718,6 +719,7 @@ export default function App() {
                         {(["verified", "review", "rejected"] as const).map(
                           (item) => (
                             <Pressable
+                              accessibilityRole="button"
                               key={item}
                               onPress={() => setScenario(item)}
                               style={[
@@ -822,7 +824,7 @@ export default function App() {
                         </Text>
                       </View>
                     )}
-                    <Pressable disabled={busy} onPress={() => setStep(1)}>
+                    <Pressable accessibilityRole="button" disabled={busy} onPress={() => setStep(1)}>
                       <Text style={s.back}>← Change document category</Text>
                     </Pressable>
                   </>
@@ -1016,9 +1018,10 @@ export default function App() {
         </View>
         <View style={s.bottomBar}>
           <Text style={s.bottomText}>UTN · UMRAH TRUSTED NETWORK</Text>
-          <Text style={s.bottomText}>
-            A considered journey, from the very beginning.
-          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 20 }}>
+            <Pressable accessibilityRole="link" accessibilityLabel="Integration guide: connect your OTA to UTN" onPress={() => Linking.openURL('https://utn-staging.com/sandbox.html')}><Text style={[s.bottomText, { color: C.green, textDecorationLine: 'underline', fontSize: 12 }]}>Integration guide ↗</Text></Pressable>
+            <Pressable accessibilityRole="link" accessibilityLabel="View UTN sandbox source on GitHub" onPress={() => Linking.openURL('https://github.com/manasikservicesllc-sudo/utn-sandbox')}><Text style={[s.bottomText, { color: C.green, textDecorationLine: 'underline', fontSize: 12 }]}>GitHub ↗</Text></Pressable>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

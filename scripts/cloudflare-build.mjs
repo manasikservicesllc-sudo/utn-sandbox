@@ -15,9 +15,9 @@ function run(args, cwd, env = {}) {
   );
   if (result.status !== 0) process.exit(result.status || 1);
 }
-const origin = "https://utn-otn.halavalet.workers.dev",
-  utn = "https://utn-testenvironment.halavalet.workers.dev",
-  api = "https://utn-api.halavalet.workers.dev";
+const origin = "https://ota.utn-staging.com",
+  utn = "https://utn-staging.com",
+  api = "https://api.utn-staging.com";
 run(["run", "build", "-w", "apps/ota"], root, {
   VITE_OTA_API_URL: origin,
   VITE_UTN_WEB_URL: utn + "/utn/",
