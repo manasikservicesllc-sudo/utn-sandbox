@@ -105,6 +105,7 @@ export const documents = {
   schengen_visa: ["visa"],
   us_resident: ["residence_permit"],
   us_visa: ["visa"],
+  other: ["passport", "residence_permit", "visa"],
 };
 export function validateDocument(document) {
   if (

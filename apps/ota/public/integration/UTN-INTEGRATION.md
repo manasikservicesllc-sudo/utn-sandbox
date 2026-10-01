@@ -100,6 +100,7 @@ Notifications are preview records, not delivered messages: `{channel,to,status,p
 | `schengen_visa`     | `visa`                      |
 | `us_resident`       | `residence_permit`          |
 | `us_visa`           | `visa`                      |
+| `other`             | `passport`, `residence_permit` or `visa` — requires review, never an automatic credential |
 
 These categories are prototype document routes, not immigration eligibility rules. In UTN the traveler reviews the provided details, corrects supported fields, selects a category, consents, and supplies a document. Corrections invalidate an existing assessment credential and create a newer pending result.
 

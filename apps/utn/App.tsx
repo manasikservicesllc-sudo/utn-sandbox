@@ -80,7 +80,29 @@ const categories = [
     documentLabel: "US visa",
     icon: "◇",
   },
+  { id: "other", title: "Other", description: "A different residence or travel document", documentType: "passport", documentLabel: "Passport", icon: "⊕" },
 ];
+const categoryArabic: Record<string, [string, string]> = {
+  gcc_citizen: ["مواطن خليجي", "مواطن إحدى دول مجلس التعاون الخليجي"],
+  gcc_resident: ["مقيم في الخليج", "حامل إقامة في إحدى دول مجلس التعاون الخليجي"],
+  schengen_resident: ["مقيم في شنغن", "حامل تصريح إقامة في منطقة شنغن"],
+  schengen_visa: ["حامل تأشيرة شنغن", "تأشيرة صادرة عن إحدى دول منطقة شنغن"],
+  us_resident: ["مقيم في الولايات المتحدة", "حامل وثيقة إقامة أمريكية"],
+  us_visa: ["حامل تأشيرة أمريكية", "تأشيرة دخول إلى الولايات المتحدة"],
+  other: ["أخرى", "وثيقة إقامة أو سفر من فئة أخرى — تتطلب مراجعة"],
+};
+const documentNames: Record<string, [string, string]> = {
+  national_id: ["National identity card", "بطاقة الهوية الوطنية"],
+  residence_permit: ["Residence permit", "بطاقة أو تصريح الإقامة"],
+  passport: ["Passport", "جواز السفر"],
+  visa: ["Visa", "التأشيرة"],
+};
+const evidenceHints: Record<string, [string, string]> = {
+  national_id: ["A clear image showing your name, issuing country and validity date.", "صورة واضحة تُظهر الاسم ودولة الإصدار وتاريخ الصلاحية."],
+  residence_permit: ["Upload the side showing your name, permit number, issuer and expiry. A missing field requires review.", "ارفع الوجه الذي يُظهر الاسم ورقم الإقامة والجهة المصدرة والانتهاء. نقص المعلومات يستلزم المراجعة."],
+  passport: ["Upload the identity page showing your name, photo, passport number and expiry.", "ارفع صفحة البيانات التي تُظهر الاسم والصورة ورقم الجواز وتاريخ الانتهاء."],
+  visa: ["Upload the visa page or electronic visa showing your name, issuer and validity dates.", "ارفع صفحة التأشيرة أو التأشيرة الإلكترونية التي تُظهر الاسم والجهة المصدرة وتواريخ الصلاحية."],
+};
 type UploadedDocument = { name: string; mimeType: string; base64: string };
 type AnyRecord = Record<string, any>;
 function Button({
@@ -450,7 +472,7 @@ export default function App() {
             ) : (
               <>
                 <View style={s.progress}>
-                  {["Your details", "Document", "Assessment", "Credential"].map(
+                  {["Details · بياناتك", "Document · الوثيقة", "Check · الفحص", "Result · النتيجة"].map(
                     (name, i) => (
                       <View key={name} style={s.progressItem}>
                         <View style={[s.dot, i <= step && s.activeDot]}>
@@ -591,7 +613,8 @@ export default function App() {
                 )}
                 {step === 1 && (
                   <>
-                    <Text style={s.eyebrow}>01 / YOUR DOCUMENT</Text>
+                    <Text style={s.eyebrow}>01 / YOUR DOCUMENT · مستندك</Text>
+                    <Text style={s.arabicTitle}>اختر فئتك، واعرف المستند المطلوب</Text>
                     <Text style={s.title}>
                       The right document.{"\n"}Nothing more.
                     </Text>
@@ -599,6 +622,7 @@ export default function App() {
                       Select your category so we can request the relevant
                       document for this prototype assessment.
                     </Text>
+                    <Text style={s.arabic}>اختر الفئة المناسبة لوثيقتك. هذه فئات للفحص التجريبي، وليست قرارًا بأهلية التأشيرة.</Text>
                     <View style={s.categoryGrid}>
                       {categories.map((item) => (
                         <Pressable
@@ -610,41 +634,58 @@ export default function App() {
                           onPress={() => {
                             setCategory(item);
                             setDocument(null);
+                            setScenario(item.id === "other" ? "review" : "verified");
                           }}
                           style={[
                             s.category,
                             category.id === item.id && s.categorySelected,
-                            width < 480 && { width: "100%" },
+                            (!wide || width < 1100) && { width: "100%" },
                           ]}
                         >
                           <View style={s.categoryTop}>
-                            <Text style={s.categoryIcon}>{item.icon}</Text>
+                            <Text style={s.categoryIcon}>{item.id === "other" ? "＋" : item.documentType === "residence_permit" ? "🪪" : item.documentType === "visa" ? "🛂" : "🪪"}</Text>
                             <Text style={s.radio}>
                               {category.id === item.id ? "●" : "○"}
                             </Text>
                           </View>
                           <Text style={s.categoryTitle}>{item.title}</Text>
+                          <Text style={s.arabicCard}>{categoryArabic[item.id][0]}</Text>
                           <Text style={s.categoryDescription}>
                             {item.description}
                           </Text>
+                          <Text style={s.arabic}>{categoryArabic[item.id][1]}</Text>
                         </Pressable>
                       ))}
                     </View>
                     <View style={s.required}>
-                      <Text style={s.smallText}>WE’LL REQUEST</Text>
+                      <Text style={s.smallText}>WE’LL REQUEST · المستند المطلوب</Text>
                       <Text style={s.cardTitle}>{category.documentLabel}</Text>
+                      <Text style={s.arabicCard}>{documentNames[category.documentType][1]}</Text>
+                      {(category.id === "other" || category.id === "gcc_citizen") && (
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                          {(category.id === "other" ? ["passport", "residence_permit", "visa"] : ["national_id", "passport"]).map((type) => (
+                            <Pressable key={type} accessibilityRole="radio" accessibilityState={{checked: category.documentType === type}} onPress={() => { setCategory({...category, documentType:type, documentLabel:documentNames[type][0]}); setDocument(null); }} style={[s.documentChoice, category.documentType === type && s.categorySelected]}>
+                              <Text style={s.smallText}>{documentNames[type][0]}</Text><Text style={s.arabic}>{documentNames[type][1]}</Text>
+                            </Pressable>
+                          ))}
+                        </View>
+                      )}
+                      <Text style={s.smallText}>{evidenceHints[category.documentType][0]}</Text>
+                      <Text style={s.arabic}>{evidenceHints[category.documentType][1]}</Text>
+                      {category.id === "other" && <Text style={s.arabic}>Other documents require review; no automatic credential. وثائق «أخرى» تتطلب مراجعة ولا تصدر لها شهادة تلقائية.</Text>}
                     </View>
                     <Button onPress={() => setStep(2)}>
-                      Continue to document check →
+                      Continue · متابعة لفحص المستند →
                     </Button>
                     <Pressable accessibilityRole="button" onPress={() => setStep(0)}>
-                      <Text style={s.back}>← Back to your details</Text>
+                      <Text style={s.back}>← Back to your details · العودة لبياناتك</Text>
                     </Pressable>
                   </>
                 )}
                 {step === 2 && (
                   <>
-                    <Text style={s.eyebrow}>02 / DOCUMENT ASSESSMENT</Text>
+                    <Text style={s.eyebrow}>02 / DOCUMENT ASSESSMENT · فحص المستند</Text>
+                    <Text style={s.arabicTitle}>صورة واضحة، وفحص مفهوم</Text>
                     <Text style={s.title}>
                       A clear picture.{"\n"}A considered check.
                     </Text>
@@ -653,6 +694,13 @@ export default function App() {
                       all corners visible and avoid glare. The document should
                       belong to {travelerName}.
                     </Text>
+                    <Text style={s.arabic}>المطلوب: {documentNames[category.documentType][1]}. أظهر جميع الزوايا وتجنب الانعكاس. يجب أن تخص الوثيقة صاحب الطلب.</Text>
+                    <View style={s.required}>
+                      <Text style={s.cardTitle}>AI document check · كيف نفحص الوثيقة؟</Text>
+                      <Text style={s.smallText}>① Read visible fields  ② Compare the name  ③ Check document type, issuer and expiry  ④ Flag uncertainty for review</Text>
+                      <Text style={s.arabic}>① قراءة البيانات الظاهرة  ② مطابقة الاسم  ③ فحص نوع الوثيقة والجهة المصدرة والانتهاء  ④ إحالة الغموض للمراجعة</Text>
+                      <Text style={s.arabic}>AI يفحص الاتساق الظاهر؛ لا يتصل بالجهة المصدرة ولا يثبت أصالة الوثيقة أو أهلية التأشيرة.</Text>
+                    </View>
                     <Pressable
                       accessibilityRole="button"
                       onPress={pickDocument}
@@ -662,12 +710,12 @@ export default function App() {
                       <Text style={s.cardTitle}>
                         {document
                           ? document.name
-                          : `Choose your ${category.documentLabel.toLowerCase()}`}
+                          : `Choose document · ارفع ${documentNames[category.documentType][1]}`}
                       </Text>
                       <Text style={s.smallText}>
                         {document
-                          ? "Document ready · Tap to replace"
-                          : "PNG, JPG or WebP · Up to 5 MB"}
+                          ? "Document ready · اضغط لاستبدال الوثيقة"
+                          : "PNG, JPG or WebP · حتى 5 MB"}
                       </Text>
                     </Pressable>
                     {document && (
@@ -705,8 +753,8 @@ export default function App() {
                             ]}
                           >
                             {item === "demo"
-                              ? "Demonstration"
-                              : "AI-assisted check"}
+                              ? "Demonstration · محاكاة"
+                              : "AI check · فحص ذكي"}
                           </Text>
                         </Pressable>
                       ))}
@@ -716,9 +764,10 @@ export default function App() {
                         ? "A simulated outcome to explore the experience. No document authenticity assessment is performed."
                         : "Your document will be sent to the configured AI provider to assess readability, visible fields and consistency. AI cannot guarantee authenticity."}
                     </Text>
+                    <Text style={s.arabic}>{mode === "demo" ? "نتيجة محاكاة لتجربة الخطوات؛ لا يتم فحص أصالة المستند." : "ستُرسل الوثيقة لمزود AI المهيأ لقراءة البيانات ومقارنة اتساقها. يتطلب ذلك تفعيل الخدمة على الخادم."}</Text>
                     {mode === "demo" && (
                       <View style={s.scenarios}>
-                        {(["verified", "review", "rejected"] as const).map(
+                        {(["verified", "review", "rejected"] as const).filter(item => category.id !== "other" || item !== "verified").map(
                           (item) => (
                             <Pressable
                               accessibilityRole="button"
@@ -734,10 +783,10 @@ export default function App() {
                             >
                               <Text style={s.smallText}>
                                 {item === "verified"
-                                  ? "Positive result"
+                                  ? "Positive · إيجابي"
                                   : item === "review"
-                                    ? "Needs review"
-                                    : "Action required"}
+                                    ? "Review · مراجعة"
+                                    : "Action · إجراء مطلوب"}
                               </Text>
                             </Pressable>
                           ),
@@ -767,6 +816,7 @@ export default function App() {
                         {mode === "ai"
                           ? "I consent to UTN sharing this document with its configured AI provider for this assessment and returning the result to my travel partner."
                           : "I understand this is a demonstration result, and the selected outcome will be returned to my travel partner."}
+                        {"\n"}{mode === "ai" ? "أوافق على مشاركة الوثيقة مع مزود AI لإجراء الفحص وإعادة النتيجة لشريك السفر." : "أفهم أن النتيجة محاكاة وستُعاد إلى شريك السفر."}
                       </Text>
                     </Pressable>
                     <Button
@@ -776,10 +826,10 @@ export default function App() {
                       onPress={verify}
                     >
                       {busy
-                        ? "Assessing your document…"
+                        ? "Assessing… · جارٍ الفحص"
                         : mode === "demo"
-                          ? "Run demonstration →"
-                          : "Start document assessment →"}
+                          ? "Run demo · ابدأ المحاكاة →"
+                          : "Start AI check · ابدأ الفحص →"}
                     </Button>
                     {busy && (
                       <View
@@ -827,7 +877,7 @@ export default function App() {
                       </View>
                     )}
                     <Pressable accessibilityRole="button" disabled={busy} onPress={() => setStep(1)}>
-                      <Text style={s.back}>← Change document category</Text>
+                      <Text style={s.back}>← Change category · تغيير الفئة</Text>
                     </Pressable>
                   </>
                 )}
@@ -1312,6 +1362,10 @@ const s = StyleSheet.create({
   categoryIcon: { color: C.green, fontSize: 21 },
   radio: { color: C.green },
   categoryTitle: { color: C.ink, fontSize: 12, fontWeight: "600" },
+  arabicTitle: { color: C.ink, fontSize: 26, lineHeight: 38, textAlign: "right", writingDirection: "rtl", marginBottom: 12 },
+  arabicCard: { color: C.ink, fontSize: 17, lineHeight: 27, textAlign: "right", writingDirection: "rtl", marginTop: 6 },
+  arabic: { color: C.muted, fontSize: 14, lineHeight: 24, textAlign: "right", writingDirection: "rtl", marginVertical: 6 },
+  documentChoice: { padding: 10, borderWidth: 1, borderColor: C.line, borderRadius: 6, minHeight: 48 },
   categoryDescription: {
     color: C.muted,
     fontSize: 10,

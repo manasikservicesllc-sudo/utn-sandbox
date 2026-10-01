@@ -741,6 +741,11 @@ export function createRuntime(options = {}) {
               expiryDate: "2028-01-01",
             };
           }
+          // Unclassified documents need review even when visible checks pass.
+          if (v.category === "other") {
+            if (verification.status === "verified") verification.status = "needs_review";
+            verification.concerns = [...(verification.concerns || []), "Other document category requires review; no automatic credential is issued."];
+          }
           i.revision = (i.revision || 0) + 1;
           verification.revision = i.revision;
           verification.category = v.category;

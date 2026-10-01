@@ -54,6 +54,19 @@ const verify = {
   mode: "demo",
   scenario: "verified",
 };
+test("other category accepts supported documents and never auto-issues a credential", async (t) => {
+  const s = await setup(t);
+  const b = await call(s.otaUrl + "/api/bookings", booking());
+  const url = s.utnUrl + "/api/invitations/" + b.data.invitations[0].token;
+  for (const documentType of ["passport", "residence_permit", "visa"]) {
+    const result = await call(url + "/verify", { ...verify, category: "other", documentType });
+    assert.equal(result.status, 200);
+    assert.equal(result.data.status, "needs_review");
+    assert.ok(!result.data.certificate);
+    assert.equal((await call(url + "/certificate")).status, 404);
+  }
+  assert.equal((await call(url + "/verify", { ...verify, category: "other", documentType: "national_id" })).status, 400);
+});
 test("multi-applicant round trip, scoped invitation, signed certificate and persisted callback", async (t) => {
   const s = await setup(t);
   const b = await call(s.otaUrl + "/api/bookings", booking(2));
