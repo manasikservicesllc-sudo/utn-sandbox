@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import * as ExpoLinking from "expo-linking";
 import DocumentCapture, { Evidence } from "./DocumentCapture";
+import PersonaCapture from './PersonaCapture';
 import * as FileSystem from "expo-file-system/legacy";
 
 const API = process.env.EXPO_PUBLIC_UTN_API_URL || "http://localhost:4101";
@@ -653,7 +654,8 @@ export default function App() {
                     </Pressable>
                   </>
                 )}
-                {step === 2 && (
+                {step === 2 && invitation?.personaAvailable && <PersonaCapture key={token + category.id} request={request} token={token} category={category.id} documentType={category.documentType} onResult={data => {setResult(data);setCertificate(data.certificate || null);setStep(3);}} />}
+                {step === 2 && !invitation?.personaAvailable && (
                   <>
                     <Text style={s.eyebrow}>02 / DOCUMENT · تصوير الوثيقة</Text>
                     <Text style={s.arabicTitle}>صوّر وثيقتك بخطوتين</Text>
@@ -817,8 +819,8 @@ export default function App() {
                 {step === 3 && result && (
                   <>
                     <Text style={s.arabicCard}>{verified ? "Verified · تم التحقق من اتساق البيانات" : "Not Verified · تعذر التحقق من البيانات"}</Text>
-                    <Text style={s.smallText}>Document data consistency only. Face match, liveness and issuer authentication: not performed.</Text>
-                    <Text style={s.arabic}>النتيجة تخص اتساق البيانات؛ مطابقة الوجه والحيوية واعتماد الجهة المصدرة لم تُجرَ.</Text>
+                    <Text style={s.smallText}>{result.mode === 'persona' ? 'Persona Sandbox: simulated document and selfie verification.' : 'Document data consistency only. Face match, liveness and issuer authentication: not performed.'}</Text>
+                    <Text style={s.arabic}>{result.mode === 'persona' ? 'نتيجة Persona تجريبية ومحاكاة؛ لا تثبت أصالة المستند أو الحيوية.' : 'النتيجة تخص اتساق البيانات؛ مطابقة الوجه والحيوية واعتماد الجهة المصدرة لم تُجرَ.'}</Text>
                     <Text style={s.eyebrow}>03 / YOUR RESULT</Text>
                     <Text style={s.title}>
                       {verified

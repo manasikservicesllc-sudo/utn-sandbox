@@ -15,8 +15,10 @@ import {
 } from "./shared.mjs";
 import { reviewImage } from "./ai.mjs";
 import { invitationEmail, dispatchEmail } from "./email.mjs";
+import { createPersona } from './persona.mjs';
 
 export function createRuntime(options = {}) {
+  const persona = createPersona({key:options.personaKey ?? process.env.PERSONA_API_KEY,template:options.personaTemplate ?? process.env.PERSONA_TEMPLATE_ID,fetchImpl:options.personaFetch});
   const publicSandbox = options.publicSandbox ?? process.env.PUBLIC_SANDBOX === "true";
   const createStore = options.store || store;
   const dir =
@@ -573,15 +575,55 @@ export function createRuntime(options = {}) {
       return json(res, 201, { invitations });
     }
     const match = path.match(
-      /^\/api\/invitations\/([^/]+)(?:\/(verify|certificate))?$/,
+      /^\/api\/invitations\/([^/]+)(?:\/(verify|certificate|persona-session|persona-result))?$/,
     );
     if (match) {
       const i = invitation(match[1]);
+      if (req.method === 'POST' && match[2] === 'persona-session') {
+        if(inFlight.has(i.id)) fail(409,'Verification is already running');
+        const {value:v}=await body(req);
+        if(v.consent!==true) fail(400,'Consent is required before starting Persona.');
+        if(!documents[v.category]?.includes(v.documentType)) fail(400,'Invalid document category');
+        if(i.persona?.finished) fail(409,'Persona assessment already completed.');
+        inFlight.add(i.id);
+        try {
+          const session=await persona.start(i);
+          const fresh=!i.persona;
+          i.persona={...i.persona,id:session.id,category:v.category,documentType:v.documentType,startedAt:i.persona?.startedAt || Date.now()};
+          if(fresh) {
+            i.revision=(i.revision||0)+1;
+            i.status='pending';
+            i.verification={status:'pending',mode:'persona',simulated:true,revision:i.revision,certificate:null};
+            await queueResult(i,i.verification);
+          }
+          utn.save();
+          return json(res,200,{inquiryId:session.id,sessionToken:session.sessionToken,environment:'sandbox'});
+        } finally { inFlight.delete(i.id); }
+      }
+      if(req.method==='POST' && match[2]==='persona-result') {
+        if(!i.persona) fail(404,'Persona session not started');
+        if(i.persona.finished) return json(res,200,i.verification);
+        if(inFlight.has(i.id)) fail(409,'Verification is already running');
+        if(i.persona.checkedAt>Date.now()-2500) return json(res,200,{status:'pending',mode:'persona',simulated:true});
+        inFlight.add(i.id);
+        try {
+          i.persona.checkedAt=Date.now();
+          const result=await persona.result(i.persona.id);
+          if(result.status==='pending') { utn.save(); return json(res,200,result); }
+          if(i.persona.category==='other') { result.status=result.outcome='unverified'; result.concerns.push('Other document category requires review.'); }
+          i.revision=(i.revision||0)+1;
+          Object.assign(result,{revision:i.revision,category:i.persona.category,documentType:i.persona.documentType,completedAt:new Date().toISOString(),certificate:null});
+          i.persona.finished=true; i.status=result.status; i.verification=result;
+          const callbackDelivered=await queueResult(i,result);
+          return json(res,200,{...result,callbackDelivered});
+        } finally { inFlight.delete(i.id); }
+      }
       if (req.method === "GET" && !match[2])
         return json(res, 200, {
           ...i,
           allowedCategories: documents,
           aiAvailable: !!config.apiKey,
+          personaAvailable: persona.available,
         });
       if (req.method === "PATCH" && !match[2]) {
         if (inFlight.has(i.id))
@@ -632,6 +674,7 @@ export function createRuntime(options = {}) {
         i.audit ||= [];
         i.audit.push(audit);
         Object.assign(i.applicant, changes);
+        if(i.persona) { delete i.persona; i.personaGeneration=(i.personaGeneration||0)+1; }
         i.revision = (i.revision || 0) + 1;
         i.status = "pending";
         i.verification = {
@@ -656,6 +699,7 @@ export function createRuntime(options = {}) {
         return json(res, 200, i.verification.certificate);
       }
       if (req.method === "POST" && match[2] === "verify") {
+        if(i.persona && !i.persona.finished) fail(409,'Finish the active Persona assessment first.');
         if (inFlight.has(i.id)) fail(409, "Verification is already running");
         const { value: v } = await body(req);
         if (!documents[v.category]?.includes(v.documentType))

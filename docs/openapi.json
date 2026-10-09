@@ -966,7 +966,8 @@
             "type": "string",
             "enum": [
               "demo",
-              "ai"
+              "ai",
+              "persona"
             ]
           },
           "outcome": {

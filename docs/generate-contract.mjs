@@ -138,7 +138,7 @@ const schemas = {
       type: "string",
       enum: ["pending", "verified", "unverified"],
     },
-    mode: { type: "string", enum: ["demo", "ai"] },
+    mode: { type: "string", enum: ["demo", "ai", "persona"] },
     outcome: {type:"string", enum:["verified","unverified"]},
     verificationLevel: string,
     capabilities: {type:"object", additionalProperties:{type:"string"}},

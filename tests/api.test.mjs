@@ -495,3 +495,34 @@ test('OTA receives binary completed outcomes and explicit scope', async t => {
  }
 });
 
+
+test('Persona session is scoped, resumable and trusts only server-fetched final decisions', async t => {
+  let decision='completed', creates=0,resumes=0;
+  const s=await setup(t,{personaKey:'persona_sandbox_test',personaTemplate:'itmpl_test',personaFetch:async (url,opts)=>{
+    if(opts.method==='POST') {
+      if(url.endsWith('/resume')) resumes++; else creates++;
+      return new Response(JSON.stringify({data:{id:'inq_test'},meta:{'session-token':'session-only'}}),{status:201});
+    }
+    return new Response(JSON.stringify({data:{id:'inq_test',attributes:{status:decision},relationships:{verifications:{data:[{id:'ver_doc'},{id:'ver_face'}]}}},included:[{id:'ver_doc',type:'verification/government-id',attributes:{status:'passed'}},{id:'ver_face',type:'verification/selfie',attributes:{status:'passed'}}]}));
+  }});
+  const b=(await call(s.otaUrl+'/api/bookings',booking())).data;
+  const url=s.utnUrl+'/api/invitations/'+b.invitations[0].token;
+  assert.equal((await call(url)).data.personaAvailable,true);
+  assert.equal((await call(url+'/persona-session',{...verify,consent:false})).status,400);
+  const start=await call(url+'/persona-session',{...verify,consent:true});
+  assert.equal(start.data.inquiryId,'inq_test');
+  await call(url+'/persona-session',{...verify,consent:true});
+  assert.equal(creates,1);assert.equal(resumes,1);
+  assert.equal((await call(url+'/verify',verify)).status,409);
+  assert.equal((await call(url+'/persona-result',{status:'verified',inquiryId:'inq_attacker'})).data.status,'pending');
+  decision='approved';
+  await new Promise(r=>setTimeout(r,2600));
+  const result=await call(url+'/persona-result',{});
+  assert.equal(result.data.status,'verified');
+  assert.equal(result.data.simulated,true);
+  assert.equal(result.data.callbackDelivered,true);
+  const again=await call(url+'/persona-result',{});
+  assert.equal(again.data.revision,result.data.revision);
+  const ota=await call(s.otaUrl+'/api/bookings/'+b.id,null,{Authorization:'Bearer '+b.accessToken});
+  assert.equal(ota.data.invitations[0].status,'verified');
+});

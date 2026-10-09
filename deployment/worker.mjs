@@ -65,6 +65,8 @@ export class PrototypeState extends DurableObject {
       partnerCallbackUrl: env.PARTNER_CALLBACK_URL,
       partnerCallbackSecret: env.PARTNER_CALLBACK_SECRET,
       apiKey: env.OPENAI_API_KEY || "",
+      personaKey: env.PERSONA_API_KEY || '',
+      personaTemplate: env.PERSONA_TEMPLATE_ID || '',
       model: env.OPENAI_MODEL || "gpt-4.1-mini",
       emailFrom: env.EMAIL_FROM || "",
       sendEmail: env.EMAIL_ENABLED === "true" && env.EMAIL ? (message) => env.EMAIL.send(message) : undefined,
@@ -142,7 +144,7 @@ export default {
       /^\/utn-api\/v1\/verification-requests(?:\/[^/]+)?$/,
     );
     const invitation = url.pathname.match(
-      /^\/api\/utn(\/api\/invitations\/[^/]+(?:\/(?:verify|certificate))?)$/,
+      /^\/api\/utn(\/api\/invitations\/[^/]+(?:\/(?:verify|certificate|persona-session|persona-result))?)$/,
     );
     if (partner || invitation) {
       if (partner && !publicSandbox && !env.SANDBOX_PARTNER_API_KEY)
