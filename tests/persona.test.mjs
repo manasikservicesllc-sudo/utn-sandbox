@@ -13,3 +13,15 @@ test('completion alone and missing/unrelated verifications never produce approva
   assert.equal(personaResult(r).status,'unverified');
   for(const status of ['declined','expired','failed']) {r.data.attributes.status=status;assert.equal(personaResult(r).status,'unverified');}
 });
+
+test('new inquiries without a session token are resumed before opening the SDK',async()=>{
+  const calls=[];
+  const provider=createPersona({key:'persona_sandbox_test',template:'itmpl_test',fetchImpl:async(url)=>{
+    calls.push(url);
+    return new Response(JSON.stringify({data:{id:'inq_test'},...(url.endsWith('/resume')?{meta:{'session-token':'scoped-session'}}:{})}));
+  }});
+  const session=await provider.start({id:'invite-test'});
+  assert.equal(session.sessionToken,'scoped-session');
+  assert.equal(calls.length,2);
+  assert.ok(calls[1].endsWith('/inquiries/inq_test/resume'));
+});

@@ -17,8 +17,10 @@ export function createPersona({key,template,fetchImpl=fetch}={}) {
   return {available,
     async start(i) {
       const ref=i.id+':'+(i.personaGeneration||0);
-      const created=i.persona?.id ? await call('/inquiries/'+encodeURIComponent(i.persona.id)+'/resume','POST',{})
+      let created=i.persona?.id ? await call('/inquiries/'+encodeURIComponent(i.persona.id)+'/resume','POST',{})
         : await call('/inquiries','POST',{data:{attributes:{'inquiry-template-id':template,'reference-id':ref}}},'utn-persona-'+ref);
+      if(/^inq_[A-Za-z0-9]+$/.test(created.data?.id || '') && !created.meta?.['session-token'])
+        created=await call('/inquiries/'+encodeURIComponent(created.data.id)+'/resume','POST',{});
       if(!/^inq_[A-Za-z0-9]+$/.test(created.data?.id || '') || !created.meta?.['session-token']) fail(502,'Persona did not provide a resumable session.');
       return {id:created.data.id,sessionToken:created.meta['session-token']};
     },

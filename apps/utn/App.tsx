@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -194,6 +194,8 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [editing, setEditing] = useState(false);
   const [corrections, setCorrections] = useState<Record<string, string>>({});
+  const currentToken = useRef(token);
+  currentToken.current = token;
   useEffect(() => {
     ExpoLinking.getInitialURL().then((url) => {
       const found = tokenFromUrl(url);
@@ -201,7 +203,11 @@ export default function App() {
       if (!found) setLoading(false);
     });
     const listener = ExpoLinking.addEventListener("url", ({ url }) => {
-      setToken(tokenFromUrl(url));
+      const nextToken = tokenFromUrl(url);
+      // Persona updates browser history while opening its modal. That is not
+      // a new invitation and must not unmount the active verification session.
+      if (!nextToken || nextToken === currentToken.current) return;
+      setToken(nextToken);
       setStep(0);
       setResult(null);
       setCertificate(null);
