@@ -654,23 +654,9 @@ export default function App() {
                 )}
                 {step === 2 && (
                   <>
-                    <Text style={s.eyebrow}>02 / DOCUMENT ASSESSMENT · فحص المستند</Text>
-                    <Text style={s.arabicTitle}>صورة واضحة، وفحص مفهوم</Text>
-                    <Text style={s.title}>
-                      A clear picture.{"\n"}A considered check.
-                    </Text>
-                    <Text style={s.subtitle}>
-                      Upload your {category.documentLabel.toLowerCase()}. Keep
-                      all corners visible and avoid glare. The document should
-                      belong to {travelerName}.
-                    </Text>
-                    <Text style={s.arabic}>المطلوب: {documentNames[category.documentType][1]}. أظهر جميع الزوايا وتجنب الانعكاس. يجب أن تخص الوثيقة صاحب الطلب.</Text>
-                    <View style={s.required}>
-                      <Text style={s.cardTitle}>AI document check · كيف نفحص الوثيقة؟</Text>
-                      <Text style={s.smallText}>① Read visible fields  ② Compare the name  ③ Check document type, issuer and expiry  ④ Flag uncertainty for review</Text>
-                      <Text style={s.arabic}>① قراءة البيانات الظاهرة  ② مطابقة الاسم  ③ فحص نوع الوثيقة والجهة المصدرة والانتهاء  ④ إحالة الغموض للمراجعة</Text>
-                      <Text style={s.arabic}>AI يفحص الاتساق الظاهر؛ لا يتصل بالجهة المصدرة ولا يثبت أصالة الوثيقة أو أهلية التأشيرة.</Text>
-                    </View>
+                    <Text style={s.eyebrow}>02 / DOCUMENT · تصوير الوثيقة</Text>
+                    <Text style={s.arabicTitle}>صوّر وثيقتك بخطوتين</Text>
+                    <Text style={s.subtitle}>Capture your document · {documentNames[category.documentType][1]}</Text>
                     <DocumentCapture key={category.id + category.documentType} type={category.documentType} value={evidence} onChange={value => { setEvidence(value); setDocument(value.front); }} />
                     <View style={s.modeRow}>
                       {(["demo", "ai"] as const).map((item) => (
