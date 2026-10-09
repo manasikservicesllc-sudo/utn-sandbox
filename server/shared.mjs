@@ -38,7 +38,7 @@ export async function body(req) {
   let length = 0;
   for await (const chunk of req) {
     length += chunk.length;
-    if (length > 8 * 1024 * 1024) fail(413, "Maximum request size is 8 MB");
+    if (length > 15 * 1024 * 1024) fail(413, "Maximum request size is 15 MB");
     chunks.push(chunk);
   }
   const raw = Buffer.concat(chunks).toString();

@@ -304,6 +304,12 @@ test("AI assessment gates certificates on every visible check and never asserts 
     document: { mimeType: "image/png", base64: "fixture" },
   };
   const config = { apiKey: "test-only", model: "test-model" };
+  const pair = {...input, documentBack: {mimeType:"image/png",base64:"back-fixture"}};
+  assert.equal((await reviewImage(pair, config)).status, "needs_review");
+  assessment.sidesConsistent = false;
+  assert.equal((await reviewImage(pair, config)).status, "needs_review");
+  assessment.sidesConsistent = true;
+  assert.equal((await reviewImage(pair, config)).status, "verified");
   const clear = await reviewImage(input, config);
   assert.equal(clear.status, "verified");
   assert.equal(clear.simulated, false);
@@ -452,4 +458,17 @@ test('explicit public sandbox permits no-key partner intake and any origin while
   const preflight=await fetch(url,{method:'OPTIONS',headers:{Origin:origin,'Access-Control-Request-Method':'POST'}});
   assert.equal(preflight.status,204);
   assert.equal(preflight.headers.get('Access-Control-Allow-Origin'),origin);
+});
+
+test('guided capture validates both sides before processing', async t => {
+  const s = await setup(t);
+  const b = await call(s.otaUrl + '/api/bookings', booking());
+  const url = s.utnUrl + '/api/invitations/' + b.data.invitations[0].token + '/verify';
+  const front = {name:'front.png',mimeType:'image/png',base64:Buffer.from([137,80,78,71,13,10,26,10,1]).toString('base64')};
+  const back = {...front,name:'back.png',base64:Buffer.from([137,80,78,71,13,10,26,10,2]).toString('base64')};
+  assert.equal((await call(url,{...verify,document:front,documentFormat:'card'})).status,400);
+  assert.equal((await call(url,{...verify,document:front,documentBack:front,documentFormat:'card'})).status,400);
+  assert.equal((await call(url,{...verify,document:front,documentBack:back,documentFormat:'page'})).status,400);
+  assert.equal((await call(url,{...verify,document:front,documentBack:{...back,base64:'invalid'},documentFormat:'card'})).status,400);
+  assert.equal((await call(url,{...verify,document:front,documentBack:back,documentFormat:'card'})).status,200);
 });

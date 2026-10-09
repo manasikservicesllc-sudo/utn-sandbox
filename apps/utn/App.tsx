@@ -15,7 +15,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import * as ExpoLinking from "expo-linking";
-import * as DocumentPicker from "expo-document-picker";
+import DocumentCapture, { Evidence } from "./DocumentCapture";
 import * as FileSystem from "expo-file-system/legacy";
 
 const API = process.env.EXPO_PUBLIC_UTN_API_URL || "http://localhost:4101";
@@ -180,6 +180,8 @@ export default function App() {
   const [step, setStep] = useState(0);
   const [category, setCategory] = useState(categories[1]);
   const [document, setDocument] = useState<UploadedDocument | null>(null);
+  const [evidence, setEvidence] = useState<Evidence>({front:null,back:null,format:'card',reviewed:false});
+  useEffect(() => { setDocument(null); setEvidence({front:null,back:null,format:['national_id','residence_permit'].includes(category.documentType) ? 'card' : 'page',reviewed:false}); }, [category.id, category.documentType, token]);
   const [mode, setMode] = useState<"demo" | "ai">("demo");
   const [scenario, setScenario] = useState<"verified" | "review" | "rejected">(
     "verified",
@@ -272,44 +274,8 @@ export default function App() {
       setBusy(false);
     }
   }
-  async function pickDocument() {
-    setError("");
-    try {
-      const picked = await DocumentPicker.getDocumentAsync({
-        type: ["image/jpeg", "image/png", "image/webp"],
-        copyToCacheDirectory: true,
-        multiple: false,
-      });
-      if (picked.canceled) return;
-      const file = picked.assets[0];
-      if (file.size && file.size > 5 * 1024 * 1024)
-        throw new Error("Please choose a document smaller than 5 MB.");
-      let base64: string;
-      if (Platform.OS === "web") {
-        const blob = await (await fetch(file.uri)).blob();
-        base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result).split(",")[1]);
-          reader.onerror = () =>
-            reject(
-              new Error("Unable to read this file. Please choose it again."),
-            );
-          reader.readAsDataURL(blob);
-        });
-      } else
-        base64 = await FileSystem.readAsStringAsync(file.uri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-      setDocument({
-        name: file.name,
-        mimeType: file.mimeType || "application/octet-stream",
-        base64,
-      });
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }
   async function verify() {
+    if ((mode === "ai" || document) && (!evidence.reviewed || !document || (evidence.format === "card" && !evidence.back))) { setError("أكمل صور المستند وأكد مراجعتها · Complete and review the document images first."); return; }
     setBusy(true);
     setError("");
     setNotice("");
@@ -322,6 +288,8 @@ export default function App() {
             category: category.id,
             documentType: category.documentType,
             document,
+            documentBack: evidence.back,
+            documentFormat: evidence.format,
             mode,
             scenario,
             consent,
@@ -703,39 +671,7 @@ export default function App() {
                       <Text style={s.arabic}>① قراءة البيانات الظاهرة  ② مطابقة الاسم  ③ فحص نوع الوثيقة والجهة المصدرة والانتهاء  ④ إحالة الغموض للمراجعة</Text>
                       <Text style={s.arabic}>AI يفحص الاتساق الظاهر؛ لا يتصل بالجهة المصدرة ولا يثبت أصالة الوثيقة أو أهلية التأشيرة.</Text>
                     </View>
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={pickDocument}
-                      style={s.upload}
-                    >
-                      <Text style={s.uploadIcon}>{document ? "✓" : "↥"}</Text>
-                      <Text style={s.cardTitle}>
-                        {document
-                          ? document.name
-                          : `Choose document · ارفع ${documentNames[category.documentType][1]}`}
-                      </Text>
-                      <Text style={s.smallText}>
-                        {document
-                          ? "Document ready · اضغط لاستبدال الوثيقة"
-                          : "PNG, JPG or WebP · حتى 5 MB"}
-                      </Text>
-                    </Pressable>
-                    {document && (
-                      <Image
-                        accessibilityLabel="Selected document preview"
-                        source={{
-                          uri: `data:${document.mimeType};base64,${document.base64}`,
-                        }}
-                        resizeMode="contain"
-                        style={{
-                          width: "100%",
-                          height: 180,
-                          marginTop: 12,
-                          borderRadius: 6,
-                          backgroundColor: C.cream,
-                        }}
-                      />
-                    )}
+                    <DocumentCapture key={category.id + category.documentType} type={category.documentType} value={evidence} onChange={value => { setEvidence(value); setDocument(value.front); }} />
                     <View style={s.modeRow}>
                       {(["demo", "ai"] as const).map((item) => (
                         <Pressable

@@ -667,6 +667,11 @@ export function createRuntime(options = {}) {
             400,
             "Consent is required before sending a document to the AI provider",
           );
+        if (v.documentFormat !== undefined && !['card','page'].includes(v.documentFormat)) fail(400, 'Invalid document format');
+        if (v.documentBack) { validateDocument(v.documentBack); if (!v.document) fail(400, 'Front image is required'); }
+        if (v.documentFormat === 'page' && v.documentBack) fail(400, 'Page documents do not accept a back image');
+        if (v.documentFormat === 'card' && (v.mode === 'ai' || v.document) && !v.documentBack) fail(400, 'Upload both front and back of the card');
+        if (v.documentBack && v.documentBack.base64 === v.document?.base64) fail(400, 'Front and back must be different images');
         if (v.document) validateDocument(v.document);
         else if (v.mode === "ai") fail(400, "Upload a document for AI review");
         if (

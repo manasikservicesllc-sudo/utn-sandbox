@@ -104,6 +104,8 @@ Notifications are preview records, not delivered messages: `{channel,to,status,p
 
 These categories are prototype document routes, not immigration eligibility rules. In UTN the traveler reviews the provided details, corrects supported fields, selects a category, consents, and supplies a document. Corrections invalidate an existing assessment credential and create a newer pending result.
 
+Guided capture adds optional `documentFormat:"card"|"page"` and `documentBack:{name,mimeType,base64}` alongside the existing `document` front image. Card submissions with images require both sides; identical front/back bytes are rejected. Page submissions use only `document`. Legacy single-image requests remain supported when `documentFormat` is omitted. AI reads both images together and includes `sides_consistency` for pairs. This is visible consistency, not barcode decoding, liveness, face matching or issuer authentication. The total JSON request limit is 15 MB.
+
 AI accepts PNG/JPEG/WebP bytes encoded as base64, maximum 5 MB decoded; MIME and basic file signatures must match. The server requires `consent:true`. The AI key lives only on the server. Missing configuration returns `503`; provider failure returns `502`; neither silently switches to demonstration mode.
 
 `mode:"demo"` can omit a document and choose `scenario:"verified"|"review"|"rejected"`. All outcomes and certificates remain explicitly simulated. `mode:"ai"` assesses visible identity/type/issuer/date consistency and returns actual extracted fields when available. It cannot authenticate the issuing authority or determine visa eligibility.
