@@ -40,9 +40,9 @@ export function personaResult(response) {
   const passed=type=>verifications.some(x=>x.type===type && x.attributes?.status==='passed');
   const document=passed('verification/government-id'), selfie=passed('verification/selfie');
   const verified=state==='approved' && document && selfie;
-  return {status:verified?'verified':'unverified',outcome:verified?'verified':'unverified',providerStatus:state,mode:'persona',simulated:true,
+  return {status:'unverified',outcome:'unverified',simulatedOutcome:verified?'verified':'unverified',providerStatus:state,mode:'persona',simulated:true,
     verificationLevel:'persona_sandbox',scope:'Persona Sandbox simulation. No real document authenticity, face matching or liveness decision.',
     capabilities:{dataExtraction:'simulated',dataComparison:'not_performed',issuerAuthentication:'not_performed',faceMatch:'simulated',liveness:'simulated'},
     checks:[{id:'persona_document',label:'Persona document check (simulated)',passed:document},{id:'persona_selfie',label:'Persona selfie check (simulated)',passed:selfie}],
-    concerns:verified?[]:['Persona Sandbox did not return approval with passed document and selfie checks.']};
+    concerns:['Persona Sandbox does not compare the uploaded document with OTA data. Complete the separate AI data assessment.',...(verified?[]:['Persona Sandbox did not return approval with passed document and selfie checks.'])]};
 }

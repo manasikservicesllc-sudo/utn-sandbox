@@ -183,6 +183,7 @@ export default function App() {
   const [document, setDocument] = useState<UploadedDocument | null>(null);
   const [evidence, setEvidence] = useState<Evidence>({front:null,back:null,format:'card',reviewed:false});
   useEffect(() => { setDocument(null); setEvidence({front:null,back:null,format:['national_id','residence_permit'].includes(category.documentType) ? 'card' : 'page',reviewed:false}); }, [category.id, category.documentType, token]);
+  const [aiStage, setAiStage] = useState(false);
   const [mode, setMode] = useState<"demo" | "ai">("demo");
   const [scenario, setScenario] = useState<"verified" | "review" | "rejected">(
     "verified",
@@ -222,11 +223,16 @@ export default function App() {
       .then((data) => {
         const invite = data.invitation || data;
         setInvitation(invite);
+        if(invite.persona && !invite.persona.finished) {
+          const selected=categories.find(item=>item.id===invite.persona.category);
+          if(selected) setCategory(selected);
+          setStep(2);
+        }
         if (!invite.verification && invite.aiAvailable) setMode("ai");
         if (invite.verification && invite.verification.status !== "pending") {
           setResult(invite.verification);
           setCertificate(invite.verification.certificate || null);
-          setMode(invite.verification.mode || "demo");
+          setMode(invite.verification.mode === "ai" ? "ai" : "demo");
           setStep(3);
           const selected = categories.find(
             (item) => item.id === invite.verification.category,
@@ -260,7 +266,7 @@ export default function App() {
   const returnUrl = invitation?.returnUrl || `${OTA}/`;
   const verdict =
     result?.status || result?.decision || result?.assessment?.status;
-  const verified = verdict === "verified";
+  const verified = verdict === "verified" && result?.mode !== "persona";
   async function saveCorrections() {
     setBusy(true);
     setError("");
@@ -660,15 +666,16 @@ export default function App() {
                     </Pressable>
                   </>
                 )}
-                {step === 2 && invitation?.personaAvailable && <PersonaCapture key={token + category.id} request={request} token={token} category={category.id} documentType={category.documentType} onResult={data => {setResult(data);setCertificate(data.certificate || null);setStep(3);}} />}
-                {step === 2 && !invitation?.personaAvailable && (
+                {step === 2 && invitation?.personaAvailable && !aiStage && <PersonaCapture key={token + category.id} request={request} token={token} category={category.id} documentType={category.documentType} onResult={data => {setResult(data);setCertificate(null);setAiStage(true);setMode("ai");setConsent(false);}} />}
+                {step === 2 && (!invitation?.personaAvailable || aiStage) && (
                   <>
                     <Text style={s.eyebrow}>02 / DOCUMENT · تصوير الوثيقة</Text>
+                    {aiStage && <Text style={s.arabic}>انتهت محاكاة Persona. الآن صوّر الوثيقة الفعلية لفحصها بـ OpenAI ومقارنتها ببيانات OTA. محاكاة Persona لا توفر استخراجًا حقيقيًا للوثيقة.</Text>}
                     <Text style={s.arabicTitle}>صوّر وثيقتك بخطوتين</Text>
                     <Text style={s.subtitle}>Capture your document · {documentNames[category.documentType][1]}</Text>
                     <DocumentCapture key={category.id + category.documentType} type={category.documentType} value={evidence} onChange={value => { setEvidence(value); setDocument(value.front); }} />
                     <View style={s.modeRow}>
-                      {(["demo", "ai"] as const).map((item) => (
+                      {(["demo", "ai"] as const).filter(item => !aiStage || item === "ai").map((item) => (
                         <Pressable
                           accessibilityRole="radio"
                           accessibilityState={{ checked: mode === item, disabled: item === "ai" && invitation?.aiAvailable !== true }}
@@ -828,6 +835,7 @@ export default function App() {
                     <Text style={s.smallText}>{result.mode === 'persona' ? 'Persona Sandbox: simulated document and selfie verification.' : 'Document data consistency only. Face match, liveness and issuer authentication: not performed.'}</Text>
                     <Text style={s.arabic}>{result.mode === 'persona' ? 'نتيجة Persona تجريبية ومحاكاة؛ لا تثبت أصالة المستند أو الحيوية.' : 'النتيجة تخص اتساق البيانات؛ مطابقة الوجه والحيوية واعتماد الجهة المصدرة لم تُجرَ.'}</Text>
                     <Text style={s.eyebrow}>03 / YOUR RESULT</Text>
+                    {result.mode === 'persona' && <Button onPress={() => {setAiStage(true);setMode('ai');setConsent(false);setStep(2);}}>Compare actual document with OTA · فحص الوثيقة الفعلية →</Button>}
                     <Text style={s.title}>
                       {verified
                         ? "A confident\nnext step."
@@ -886,7 +894,7 @@ export default function App() {
                         </Text>
                       </View>
                       <Text style={s.credentialDisclaimer}>
-                        {(result.mode || mode) === "demo"
+                        {(result.mode || mode) === "demo" || result.simulated
                           ? "DEMONSTRATION · NOT A VALID CREDENTIAL"
                           : "AI-ASSISTED ASSESSMENT · NOT GOVERNMENT APPROVAL"}
                       </Text>

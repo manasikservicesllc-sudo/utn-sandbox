@@ -212,6 +212,7 @@ test("invalid signature, invalid category/type, bad upload and absent AI key fai
         ...verify,
         mode: "ai",
         document,
+        documentFormat: "page",
         consent: true,
       })
     ).status,
@@ -518,11 +519,13 @@ test('Persona session is scoped, resumable and trusts only server-fetched final 
   decision='approved';
   await new Promise(r=>setTimeout(r,2600));
   const result=await call(url+'/persona-result',{});
-  assert.equal(result.data.status,'verified');
+  assert.equal(result.data.status,'unverified');
+  assert.equal(result.data.simulatedOutcome,'verified');
+  assert.equal(result.data.capabilities.dataComparison,'not_performed');
   assert.equal(result.data.simulated,true);
   assert.equal(result.data.callbackDelivered,true);
   const again=await call(url+'/persona-result',{});
   assert.equal(again.data.revision,result.data.revision);
   const ota=await call(s.otaUrl+'/api/bookings/'+b.id,null,{Authorization:'Bearer '+b.accessToken});
-  assert.equal(ota.data.invitations[0].status,'verified');
+  assert.equal(ota.data.invitations[0].status,'unverified');
 });

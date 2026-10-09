@@ -579,6 +579,14 @@ export function createRuntime(options = {}) {
     );
     if (match) {
       const i = invitation(match[1]);
+      // Revoke legacy sandbox-only approvals when the invitation is reopened.
+      if(i.verification?.mode==='persona' && i.verification.status==='verified') {
+        i.revision=(i.revision||0)+1;
+        i.status='unverified';
+        i.verification={...i.verification,status:'unverified',outcome:'unverified',simulatedOutcome:'verified',certificate:null,revision:i.revision,
+          concerns:['Previous result was a Persona simulation, not an OTA data comparison. Complete the AI assessment.']};
+        await queueResult(i,i.verification);
+      }
       if (req.method === 'POST' && match[2] === 'persona-session') {
         if(inFlight.has(i.id)) fail(409,'Verification is already running');
         const {value:v}=await body(req);
@@ -602,7 +610,7 @@ export function createRuntime(options = {}) {
       }
       if(req.method==='POST' && match[2]==='persona-result') {
         if(!i.persona) fail(404,'Persona session not started');
-        if(i.persona.finished) return json(res,200,i.verification);
+        if(i.persona.finished) return json(res,200,i.persona.result || i.verification);
         if(inFlight.has(i.id)) fail(409,'Verification is already running');
         if(i.persona.checkedAt>Date.now()-2500) return json(res,200,{status:'pending',mode:'persona',simulated:true});
         inFlight.add(i.id);
@@ -613,7 +621,7 @@ export function createRuntime(options = {}) {
           if(i.persona.category==='other') { result.status=result.outcome='unverified'; result.concerns.push('Other document category requires review.'); }
           i.revision=(i.revision||0)+1;
           Object.assign(result,{revision:i.revision,category:i.persona.category,documentType:i.persona.documentType,completedAt:new Date().toISOString(),certificate:null});
-          i.persona.finished=true; i.status=result.status; i.verification=result;
+          i.persona.finished=true; i.persona.result=result; i.status=result.status; i.verification=result;
           const callbackDelivered=await queueResult(i,result);
           return json(res,200,{...result,callbackDelivered});
         } finally { inFlight.delete(i.id); }
@@ -711,6 +719,7 @@ export function createRuntime(options = {}) {
             400,
             "Consent is required before sending a document to the AI provider",
           );
+        if(v.mode==='ai' && !v.documentFormat && ['national_id','residence_permit'].includes(v.documentType)) v.documentFormat='card';
         if (v.documentFormat !== undefined && !['card','page'].includes(v.documentFormat)) fail(400, 'Invalid document format');
         if (v.documentBack) { validateDocument(v.documentBack); if (!v.document) fail(400, 'Front image is required'); }
         if (v.documentFormat === 'page' && v.documentBack) fail(400, 'Page documents do not accept a back image');
@@ -809,6 +818,7 @@ export function createRuntime(options = {}) {
             verification.reviewRecommended = verification.status === 'needs_review';
             verification.status = 'unverified';
           }
+          if(v.mode==='ai' && i.persona?.result) verification.personaSimulation=i.persona.result;
           verification.outcome = verification.status;
           verification.verificationLevel ||= 'document_data_consistency';
           verification.capabilities ||= {dataExtraction:'simulated',dataComparison:'simulated',issuerAuthentication:'not_performed',faceMatch:'not_performed',liveness:'not_performed'};
