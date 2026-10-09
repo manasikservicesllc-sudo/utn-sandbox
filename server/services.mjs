@@ -124,8 +124,8 @@ export function createRuntime(options = {}) {
       createdAt: r.createdAt,
       status: statuses.every((s) => s === "verified")
         ? "verified"
-        : statuses.includes("rejected")
-          ? "action_required"
+        : (statuses.includes("unverified") || statuses.includes("rejected"))
+          ? "unverified"
           : statuses.includes("needs_review")
             ? "needs_review"
             : "pending_verification",
@@ -387,7 +387,7 @@ export function createRuntime(options = {}) {
         !b.invitations.some(
           (i) => i.id === v.invitationId && i.otaMutamerId === v.otaMutamerId,
         ) ||
-        !["verified", "needs_review", "rejected", "pending"].includes(
+        !["verified", "unverified", "needs_review", "rejected", "pending"].includes(
           v.verification?.status,
         )
       )
@@ -406,8 +406,8 @@ export function createRuntime(options = {}) {
       );
       b.status = statuses.every((s) => s === "verified")
         ? "verified"
-        : statuses.includes("rejected")
-          ? "action_required"
+        : (statuses.includes("unverified") || statuses.includes("rejected"))
+          ? "unverified"
           : statuses.includes("needs_review")
             ? "needs_review"
             : "pending_verification";
@@ -761,6 +761,13 @@ export function createRuntime(options = {}) {
             if (verification.status === "verified") verification.status = "needs_review";
             verification.concerns = [...(verification.concerns || []), "Other document category requires review; no automatic credential is issued."];
           }
+          if (verification.status !== 'verified') {
+            verification.reviewRecommended = verification.status === 'needs_review';
+            verification.status = 'unverified';
+          }
+          verification.outcome = verification.status;
+          verification.verificationLevel ||= 'document_data_consistency';
+          verification.capabilities ||= {dataExtraction:'simulated',dataComparison:'simulated',issuerAuthentication:'not_performed',faceMatch:'not_performed',liveness:'not_performed'};
           i.revision = (i.revision || 0) + 1;
           verification.revision = i.revision;
           verification.category = v.category;

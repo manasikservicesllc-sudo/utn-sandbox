@@ -124,6 +124,14 @@ export async function reviewImage(
       "AI returned an incomplete assessment. No certificate was issued.",
     );
   }
+  const norm = value => String(value || '').normalize('NFKC').replace(/[\s-]/g,'').toUpperCase();
+  const expectedNumber = documentType === 'passport' ? applicant.passportNumber : documentType === 'residence_permit' ? applicant.iqamaNo : null;
+  const expectedExpiry = documentType === 'passport' ? applicant.passportExpiryDate : documentType === 'residence_permit' ? applicant.iqamaExpiryDate : null;
+  const extracted = review.extractedFields || {};
+  const comparisons = [
+    {field:'documentNumber', sourceField:documentType === 'passport' ? 'passportNumber' : documentType === 'residence_permit' ? 'iqamaNo' : null, expected:expectedNumber || null, actual:extracted.documentNumber || null, status:!expectedNumber ? 'not_provided' : !extracted.documentNumber ? 'unreadable' : norm(expectedNumber) === norm(extracted.documentNumber) ? 'match' : 'mismatch'},
+    {field:'expiryDate', sourceField:documentType === 'passport' ? 'passportExpiryDate' : documentType === 'residence_permit' ? 'iqamaExpiryDate' : null, expected:expectedExpiry ? String(expectedExpiry).slice(0,10) : null, actual:extracted.expiryDate || null, status:!expectedExpiry ? 'not_provided' : !extracted.expiryDate ? 'unreadable' : String(expectedExpiry).slice(0,10) === extracted.expiryDate ? 'match' : 'mismatch'},
+  ];
   const validDate =
     typeof review.expiryDate === "string" &&
     /^\d{4}-\d{2}-\d{2}$/.test(review.expiryDate) &&
@@ -131,6 +139,8 @@ export async function reviewImage(
   const unexpired =
     validDate && review.expiryDate >= new Date().toISOString().slice(0, 10);
   const checks = [
+    ...comparisons.filter(x => x.status !== "not_provided").map(x => ({id:"ota_" + x.field,label:"OTA " + x.field + " consistency",passed:x.status === "match"})),
+    {id:"number_readable",label:"Document number extracted",passed:typeof extracted.documentNumber === "string" && !!extracted.documentNumber.trim()},
     ...(documentBack ? [{id:"sides_consistency",label:"Front and back consistency",passed:review.sidesConsistent === true}] : []),
     {
       id: "readability",
@@ -159,10 +169,13 @@ export async function reviewImage(
     Array.isArray(review.concerns) &&
     review.concerns.length === 0;
   return {
-    status: clear ? "verified" : "needs_review",
+    status: clear ? "verified" : "unverified",
     mode: "ai",
     simulated: false,
     checks,
+    comparisons,
+    verificationLevel: "document_data_consistency",
+    capabilities: {dataExtraction:"performed",dataComparison:"performed",issuerAuthentication:"not_performed",faceMatch:"not_performed",liveness:"not_performed"},
     concerns: review.concerns || [],
     extractedFields: review.extractedFields || null,
     scope:

@@ -215,6 +215,7 @@ export default function App() {
       .then((data) => {
         const invite = data.invitation || data;
         setInvitation(invite);
+        if (!invite.verification && invite.aiAvailable) setMode("ai");
         if (invite.verification && invite.verification.status !== "pending") {
           setResult(invite.verification);
           setCertificate(invite.verification.certificate || null);
@@ -815,6 +816,9 @@ export default function App() {
                 )}
                 {step === 3 && result && (
                   <>
+                    <Text style={s.arabicCard}>{verified ? "Verified · تم التحقق من اتساق البيانات" : "Not Verified · تعذر التحقق من البيانات"}</Text>
+                    <Text style={s.smallText}>Document data consistency only. Face match, liveness and issuer authentication: not performed.</Text>
+                    <Text style={s.arabic}>النتيجة تخص اتساق البيانات؛ مطابقة الوجه والحيوية واعتماد الجهة المصدرة لم تُجرَ.</Text>
                     <Text style={s.eyebrow}>03 / YOUR RESULT</Text>
                     <Text style={s.title}>
                       {verified
@@ -863,7 +867,7 @@ export default function App() {
                                     "needs_review",
                                   ].includes(verdict)
                                 ? "◷ Review required"
-                                : "! Action required"}
+                                : "Not Verified"}
                           </Text>
                         </View>
                         <Text style={s.credentialId}>
@@ -919,6 +923,7 @@ export default function App() {
                         </View>
                       </View>
                     ))}
+                    {!!result.comparisons?.length && <View style={s.required}><Text style={s.cardTitle}>OTA comparison · مقارنة بيانات الحجز</Text>{result.comparisons.map((item: any) => <View key={item.field} style={{marginTop:12}}><Text style={s.label}>{item.field === 'documentNumber' ? 'رقم الوثيقة · Document number' : 'تاريخ الانتهاء · Expiry date'}</Text><Text style={s.smallText}>OTA: {item.expected || 'Not provided · غير موجود'}</Text><Text style={s.smallText}>Document: {item.actual || 'Not readable · غير مقروء'}</Text><Text style={s.arabic}>{item.status === 'match' ? '✓ متطابق · Match' : item.status === 'not_provided' ? 'لا توجد قيمة للمقارنة · No comparable OTA field' : 'غير متطابق أو غير مقروء · Mismatch or unreadable'}</Text></View>)}</View>}
                     {result.extractedFields && (
                       <View
                         style={[

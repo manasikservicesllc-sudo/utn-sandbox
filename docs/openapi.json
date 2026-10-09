@@ -959,8 +959,7 @@
             "enum": [
               "pending",
               "verified",
-              "needs_review",
-              "rejected"
+              "unverified"
             ]
           },
           "mode": {
@@ -969,6 +968,29 @@
               "demo",
               "ai"
             ]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "unverified"
+            ]
+          },
+          "verificationLevel": {
+            "type": "string"
+          },
+          "capabilities": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "comparisons": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
           },
           "simulated": {
             "type": "boolean"
@@ -1129,8 +1151,7 @@
             "enum": [
               "pending_verification",
               "verified",
-              "needs_review",
-              "action_required"
+              "unverified"
             ]
           },
           "invitations": {

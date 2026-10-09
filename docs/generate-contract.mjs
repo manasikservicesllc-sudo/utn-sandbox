@@ -136,9 +136,13 @@ const schemas = {
   Verification: obj({
     status: {
       type: "string",
-      enum: ["pending", "verified", "needs_review", "rejected"],
+      enum: ["pending", "verified", "unverified"],
     },
     mode: { type: "string", enum: ["demo", "ai"] },
+    outcome: {type:"string", enum:["verified","unverified"]},
+    verificationLevel: string,
+    capabilities: {type:"object", additionalProperties:{type:"string"}},
+    comparisons: {type:"array",items:{type:"object",additionalProperties:true}},
     simulated: boolean,
     category: string,
     documentType: string,
@@ -170,8 +174,7 @@ schemas.RequestStatus = obj({
     enum: [
       "pending_verification",
       "verified",
-      "needs_review",
-      "action_required",
+      "unverified",
     ],
   },
   invitations: array(ref("Invitation")),

@@ -56,7 +56,8 @@ type Booking = {
   [key: string]: any;
 };
 const labels: Record<string, string> = {
-  verified: "Document check complete",
+  verified: "Verified · تم التحقق من البيانات",
+  unverified: "Not Verified · تعذر التحقق",
   pending: "Awaiting verification",
   pending_verification: "Awaiting verification",
   action_required: "Action required",
@@ -1117,7 +1118,7 @@ export default function App() {
                     </div>
                     <p>
                       {state === "verified"
-                        ? "Your UTN result has arrived and is attached to this journey."
+                        ? "Your document data check is complete. This does not include issuer authentication, face matching or liveness."
                         : "Your details are already with UTN. Choose your category and upload the relevant document."}
                     </p>
                     <a

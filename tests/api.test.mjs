@@ -61,7 +61,7 @@ test("other category accepts supported documents and never auto-issues a credent
   for (const documentType of ["passport", "residence_permit", "visa"]) {
     const result = await call(url + "/verify", { ...verify, category: "other", documentType });
     assert.equal(result.status, 200);
-    assert.equal(result.data.status, "needs_review");
+    assert.equal(result.data.status, "unverified");
     assert.ok(!result.data.certificate);
     assert.equal((await call(url + "/certificate")).status, 404);
   }
@@ -219,7 +219,7 @@ test("invalid signature, invalid category/type, bad upload and absent AI key fai
   );
   assert.equal((await call(url + "/certificate")).status, 404);
   const review = await call(url + "/verify", { ...verify, scenario: "review" });
-  assert.equal(review.data.status, "needs_review");
+  assert.equal(review.data.status, "unverified");
   assert.equal(review.data.certificate, undefined);
   assert.equal(
     (
@@ -227,7 +227,7 @@ test("invalid signature, invalid category/type, bad upload and absent AI key fai
         Authorization: "Bearer " + b.accessToken,
       })
     ).data.status,
-    "needs_review",
+    "unverified",
   );
 });
 test("callback replay is idempotent and untrusted browser origins are rejected", async (t) => {
@@ -239,7 +239,7 @@ test("callback replay is idempotent and untrusted browser origins are rejected",
     bookingId: b.id,
     invitationId: i.id,
     otaMutamerId: 1,
-    verification: { status: "needs_review" },
+    verification: { status: "unverified" },
   };
   const stamp = String(Date.now());
   const headers = {
@@ -268,6 +268,7 @@ test("AI assessment gates certificates on every visible check and never asserts 
   const originalFetch = globalThis.fetch;
   let assessment = {
     readable: true,
+    extractedFields:{fullName:"Demo Person",documentNumber:"DEMO123",issuingCountry:"AE",expiryDate:"2099-01-01"},
     nameMatches: true,
     typeMatches: true,
     expiryDate: "2099-01-01",
@@ -305,21 +306,27 @@ test("AI assessment gates certificates on every visible check and never asserts 
   };
   const config = { apiKey: "test-only", model: "test-model" };
   const pair = {...input, documentBack: {mimeType:"image/png",base64:"back-fixture"}};
-  assert.equal((await reviewImage(pair, config)).status, "needs_review");
+  assert.equal((await reviewImage(pair, config)).status, "unverified");
   assessment.sidesConsistent = false;
-  assert.equal((await reviewImage(pair, config)).status, "needs_review");
+  assert.equal((await reviewImage(pair, config)).status, "unverified");
   assessment.sidesConsistent = true;
   assert.equal((await reviewImage(pair, config)).status, "verified");
+  const mismatch = await reviewImage({...input,applicant:{...input.applicant,iqamaNo:'DIFFERENT',iqamaExpiryDate:'2099-01-01'}},config);
+  assert.equal(mismatch.status,'unverified');
+  assert.equal(mismatch.comparisons[0].status,'mismatch');
+  const matching = await reviewImage({...input,applicant:{...input.applicant,iqamaNo:'DEMO123',iqamaExpiryDate:'2099-01-01'}},config);
+  assert.equal(matching.status,'verified');
+  assert.equal(matching.capabilities.liveness,'not_performed');
   const clear = await reviewImage(input, config);
   assert.equal(clear.status, "verified");
   assert.equal(clear.simulated, false);
   assert.match(clear.scope, /not issuer authentication/);
   assessment = { ...assessment, nameMatches: false };
-  assert.equal((await reviewImage(input, config)).status, "needs_review");
+  assert.equal((await reviewImage(input, config)).status, "unverified");
   assessment = { ...assessment, nameMatches: true, expiryDate: "2001-01-01" };
-  assert.equal((await reviewImage(input, config)).status, "needs_review");
+  assert.equal((await reviewImage(input, config)).status, "unverified");
   assessment = { ...assessment, expiryDate: null };
-  assert.equal((await reviewImage(input, config)).status, "needs_review");
+  assert.equal((await reviewImage(input, config)).status, "unverified");
 });
 test("direct partner intake authenticates, preserves ministry-shaped body, reports honest notifications and blocks arbitrary callbacks", async (t) => {
   const s = await setup(t);
@@ -472,3 +479,19 @@ test('guided capture validates both sides before processing', async t => {
   assert.equal((await call(url,{...verify,document:front,documentBack:{...back,base64:'invalid'},documentFormat:'card'})).status,400);
   assert.equal((await call(url,{...verify,document:front,documentBack:back,documentFormat:'card'})).status,200);
 });
+
+test('OTA receives binary completed outcomes and explicit scope', async t => {
+ const s=await setup(t);
+ const b=await call(s.otaUrl+'/api/bookings',booking());
+ const token=b.data.invitations[0].token;
+ for (const [scenario,expected] of [['verified','verified'],['review','unverified'],['rejected','unverified']]) {
+   const r=await call(s.utnUrl+'/api/invitations/'+token+'/verify',{...verify,scenario});
+   assert.equal(r.data.outcome,expected);
+   assert.equal(r.data.callbackDelivered,true);
+   assert.equal(r.data.capabilities.faceMatch,'not_performed');
+   const ota=await call(s.otaUrl+'/api/bookings/'+b.data.id,null,{Authorization:'Bearer '+b.data.accessToken});
+   assert.equal(ota.data.invitations[0].status,expected);
+   assert.equal(!!ota.data.invitations[0].certificate,expected==='verified');
+ }
+});
+
