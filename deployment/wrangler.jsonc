@@ -15,6 +15,9 @@
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PrototypeState"] }],
   "vars": {
+    "ATHBIT_ENABLED": "true",
+    "ATHBIT_BASE_URL": "https://athbitsa.com/hcgi/platform",
+    "ATHBIT_RETURN_URL": "https://ota.utn-staging.com/api/athbit/return",
     "PUBLIC_SANDBOX": "true",
     "PUBLIC_ORIGIN": "https://ota.utn-staging.com",
     "UTN_ORIGIN": "https://utn-staging.com",

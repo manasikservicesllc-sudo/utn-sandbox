@@ -53,6 +53,7 @@ type Booking = {
   accessToken: string;
   status: string;
   invitations: any[];
+  provider?: string;
   [key: string]: any;
 };
 const labels: Record<string, string> = {
@@ -1094,6 +1095,7 @@ export default function App() {
                   ? "Continue to UTN to complete each traveler’s document assessment. Results will appear here automatically."
                   : "The selected essential service does not require a UTN assessment."}
               </p>
+              {booking?.provider === "athbit" && booking.groupUrl && <a className="primary" href={booking.groupUrl} rel="noreferrer">استكمال المجموعة لدى أثبِت · Continue group</a>}
               {booking?.invitations?.map((inv: any, i: number) => {
                 const state = inv.status || "pending";
                 return (
@@ -1135,8 +1137,9 @@ export default function App() {
                         : "Continue to UTN"}
                       <ArrowUpRight size={17} />
                     </a>
+                    {inv.action && <div className="soft-note" role="status"><p dir="rtl">{inv.action.messageAr}</p><p>{inv.action.messageEn}</p></div>}
                     <div className="invite-links">
-                      <a href={inv.deepLink}>Open iOS app</a>
+                      {inv.deepLink && <a href={inv.deepLink}>Open iOS app</a>}
                       <button
                         onClick={async () => {
                           await navigator.clipboard.writeText(
@@ -1154,7 +1157,7 @@ export default function App() {
                       <div className="soft-note">
                         <CheckCircle2 size={16} /> Credential{" "}
                         {inv.certificate.id} ·{" "}
-                        {inv.certificate.mode === "demo"
+                        {inv.certificate.mode === "demo" || inv.certificate.simulated || booking?.provider === "athbit"
                           ? "Demonstration"
                           : "AI-assisted"}
                       </div>

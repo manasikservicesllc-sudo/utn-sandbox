@@ -58,6 +58,8 @@ export class PrototypeState extends DurableObject {
     };
     this.runtime = createRuntime({
       dataDir: "/",
+      athbitEnabled: env.ATHBIT_ENABLED === 'true',
+      athbit: {baseUrl:env.ATHBIT_BASE_URL,apiKey:env.ATHBIT_API_KEY,webhookSecret:env.ATHBIT_WEBHOOK_SECRET,returnUrl:env.ATHBIT_RETURN_URL},
       store,
       secret: env.SERVICE_SECRET,
       publicSandbox: env.PUBLIC_SANDBOX === "true",

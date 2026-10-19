@@ -16,8 +16,11 @@ import {
 import { reviewImage } from "./ai.mjs";
 import { invitationEmail, dispatchEmail } from "./email.mjs";
 import { createPersona } from './persona.mjs';
+import { createAthbit, applyAthbitEvent } from './athbit.mjs';
 
 export function createRuntime(options = {}) {
+  const athbitEnabled=options.athbitEnabled ?? process.env.ATHBIT_ENABLED === 'true';
+  const athbit=createAthbit(options.athbit || {baseUrl:process.env.ATHBIT_BASE_URL,apiKey:process.env.ATHBIT_API_KEY,webhookSecret:process.env.ATHBIT_WEBHOOK_SECRET,returnUrl:process.env.ATHBIT_RETURN_URL});
   const persona = createPersona({key:options.personaKey ?? process.env.PERSONA_API_KEY,template:options.personaTemplate ?? process.env.PERSONA_TEMPLATE_ID,fetchImpl:options.personaFetch});
   const publicSandbox = options.publicSandbox ?? process.env.PUBLIC_SANDBOX === "true";
   const createStore = options.store || store;
@@ -49,6 +52,7 @@ export function createRuntime(options = {}) {
     idempotency: {},
   });
   ota.data.idempotency ||= {};
+  ota.data.athbitEvents ||= {};
   for (const booking of Object.values(ota.data.bookings))
     if (booking.status === "creating_invitations")
       booking.status = "invitation_failed";
@@ -94,6 +98,8 @@ export function createRuntime(options = {}) {
     visaRequest: b.visaRequest,
     otaExtras: b.otaExtras,
     serviceId: b.serviceId,
+    provider: b.provider || "sandbox",
+    groupUrl: b.groupUrl || null,
     verifications: b.verifications,
     requestId: b.visaRequest.groupInfo.otaRequestId,
     utnRequestId: b.utnRequestId || null,
@@ -198,6 +204,7 @@ export function createRuntime(options = {}) {
     });
   }
   async function submitOta(b) {
+    if(b.provider === "athbit") return athbit.submit(b);
     return sendPost(
       `${utnUrl}/api/v1/verification-requests`,
       {
@@ -268,6 +275,24 @@ export function createRuntime(options = {}) {
   const otaHandler = handler(async (req, res, path) => {
     if (req.method === "GET" && path === "/api/health")
       return json(res, 200, { service: "ota", status: "ok", demo: true });
+    if(req.method === 'POST' && path === '/api/webhooks/athbit') {
+      const {raw}=await body(req);
+      const event=athbit.verifyEvent(raw,req.headers);
+      if(Object.hasOwn(ota.data.athbitEvents,event.eventId)) return json(res,200,{received:true,duplicate:true});
+      if(event.eventType==='test.ping') {ota.data.athbitEvents[event.eventId]=true;ota.save();return json(res,200,{received:true});}
+      const b=Object.values(ota.data.bookings).find(b=>b.provider==='athbit' && b.utnRequestId===event.requestId);
+      // Creation events can race the intake response; request a provider retry.
+      if(!b) fail(503,'Request mapping not yet available; retry delivery');
+      const result=applyAthbitEvent(b,event);
+      ota.data.athbitEvents[event.eventId]=true;
+      ota.save();
+      return json(res,200,result);
+    }
+    if(req.method==='GET' && path==='/api/athbit/return') {
+      athbit.verifyReturn(new URL(req.url,'http://localhost').searchParams);
+      res.writeHead(302,{'Location':'/?athbit_return=1','Cache-Control':'no-store','Referrer-Policy':'no-referrer'});
+      return res.end();
+    }
     if (req.method === "POST" && path === "/api/bookings") {
       const { value: v } = await body(req);
       const idempotencyKey = req.headers["idempotency-key"];
@@ -298,6 +323,7 @@ export function createRuntime(options = {}) {
         try {
           const result = await submitOta(previous);
           previous.invitations = result.invitations;
+          previous.groupUrl = result.groupUrl || null;
           previous.utnRequestId = result.requestId;
           previous.notifications = result.notifications;
           previous.status = "pending_verification";
@@ -343,6 +369,7 @@ export function createRuntime(options = {}) {
         visaRequest: v.visaRequest,
         otaExtras: v.otaExtras || {},
         serviceId: v.serviceId,
+        provider: athbitEnabled ? "athbit" : "sandbox",
         invitations: [],
         verifications: {},
       };
@@ -354,6 +381,7 @@ export function createRuntime(options = {}) {
       try {
         const result = await submitOta(b);
         b.invitations = result.invitations;
+        b.groupUrl = result.groupUrl || null;
         b.utnRequestId = result.requestId;
         b.notifications = result.notifications;
         b.status = "pending_verification";
