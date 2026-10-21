@@ -38,6 +38,10 @@ export function createAthbit({baseUrl,apiKey,webhookSecret,returnUrl,fetchImpl=f
       payload.return_mode='after_submit';
       const ids=new Set();
       for(const a of payload.mutamers) {
+        if(typeof a.birthDate!=='string' || !a.birthDate.trim() || typeof a.passportNumber!=='string' || !a.passportNumber.trim()) fail(400,'Each traveler requires birthDate and passportNumber');
+        for(const field of ['birthDate','passportIssueDate','passportExpiryDate','iqamaExpiryDate']) {
+          if(typeof a[field]==='string' && /^\d{4}-\d{2}-\d{2}T/.test(a[field])) a[field]=a[field].slice(0,10);
+        }
         if(a.otaMutamerId==null || ids.has(String(a.otaMutamerId)) || !a.firstNameEn || !a.familyNameEn) fail(400,'Each traveler requires a unique ID and English first/family names');
         ids.add(String(a.otaMutamerId));
         if(a.grandfatherNameEn==null && a.grandFatherNameEn!=null) a.grandfatherNameEn=a.grandFatherNameEn;
@@ -72,23 +76,46 @@ export function createAthbit({baseUrl,apiKey,webhookSecret,returnUrl,fetchImpl=f
       ready();
       for(const k of ['ref','result','ts','sig']) if(params.getAll(k).length!==1) fail(401,'Invalid return parameters');
       const ref=params.get('ref'),result=params.get('result'),ts=params.get('ts'),sig=params.get('sig');
-      if(!ref || ref.length>200 || !['submitted','verified','unable_to_verify'].includes(result) || !/^\d{10}$/.test(ts||'') || Math.abs(now/1000-Number(ts))>600 || !/^[a-f0-9]{64}$/i.test(sig||'') || !equal(sig.toLowerCase(),sign(ref+'|'+result+'|'+ts,webhookSecret))) fail(401,'Invalid Athbit return signature');
+      if(!ref || ref.length>200 || !['submitted','verified','review_required','unable_to_verify'].includes(result) || !/^\d{10}$/.test(ts||'') || Math.abs(now/1000-Number(ts))>600 || !/^[a-f0-9]{64}$/i.test(sig||'') || !equal(sig.toLowerCase(),sign(ref+'|'+result+'|'+ts,webhookSecret))) fail(401,'Invalid Athbit return signature');
       // A valid return never updates a booking decision. Webhooks remain authoritative.
       return {ref,result};
     }
   };
 }
 
+export function athbitVerification(booking,invite) {
+  return invite.addedByPilgrim ? booking.companionVerifications?.[invite.id] : booking.verifications[invite.otaMutamerId];
+}
+
 export function applyAthbitEvent(booking,event) {
   if(event.requestId!==booking.utnRequestId) fail(400,'Athbit request mismatch');
-  const invite=booking.invitations.find(i=>i.id===event.invitationId && String(i.otaMutamerId)===String(event.otaMutamerId));
-  if(!invite) fail(400,'Athbit invitation mismatch');
-  const old=booking.verifications[invite.otaMutamerId];
+  if(typeof event.invitationId!=='string' || !event.invitationId || event.invitationId.length>200) fail(400,'Invalid Athbit invitation ID');
+  if(event.eventType==='mutamer.added_by_pilgrim') {
+    if(!booking.invitations.some(i=>i.id===event.addedByInvitationId)) fail(503,'Athbit parent invitation not available yet');
+    const existing=booking.invitations.find(i=>i.id===event.invitationId);
+    if(existing) {
+      if(!existing.addedByPilgrim || existing.addedByInvitationId!==event.addedByInvitationId) fail(400,'Athbit companion conflict');
+      return {received:true,duplicate:true};
+    }
+    if(typeof event.fullNameEn!=='string' || !event.fullNameEn.trim()) fail(400,'Companion name required');
+    booking.invitations.push({id:event.invitationId,addedByPilgrim:true,addedByInvitationId:event.addedByInvitationId,applicantName:event.fullNameEn.slice(0,300),relationship:String(event.relationship||'').slice(0,100),status:'pending'});
+    return {received:true};
+  }
+  const invite=booking.invitations.find(i=>i.id===event.invitationId);
+  // A decision may race the companion-added event; let Athbit retry it.
+  if(!invite) fail(503,'Athbit invitation not available yet');
+  if(!invite.addedByPilgrim && String(invite.otaMutamerId)!==String(event.otaMutamerId)) fail(400,'Athbit invitation mismatch');
+  const old=athbitVerification(booking,invite);
   if(event.verification) {
     const v=event.verification;
-    if(!['pending','verified','unverified'].includes(v.status)||!Number.isInteger(v.revision)||v.revision<1) fail(400,'Invalid Athbit decision');
+    if(!['pending','verified','review_required','unverified'].includes(v.status)||!Number.isInteger(v.revision)||v.revision<1) fail(400,'Invalid Athbit decision');
+    if(v.outcome!=null && !['verified','review_required','unverified'].includes(v.outcome)) fail(400,'Invalid Athbit outcome');
     if((old?.revision||0)>=v.revision) return {stale:true};
-    booking.verifications[invite.otaMutamerId]={...v,simulated:true,mode:'athbit_test'};
+    const value={...v,certificate:v.status==='verified'?v.certificate:null,simulated:true,mode:'athbit_test'};
+    if(invite.addedByPilgrim) {
+      booking.companionVerifications ||= {};
+      Object.defineProperty(booking.companionVerifications,invite.id,{value,writable:true,enumerable:true,configurable:true});
+    } else booking.verifications[invite.otaMutamerId]=value;
     invite.action=null;
   } else {
     // Workflow signals (including case_result_issued) are not final decisions.
@@ -98,7 +125,7 @@ export function applyAthbitEvent(booking,event) {
     invite.lastWorkflowAt=occurred;
     invite.action={eventType:event.eventType,actionType:event.actionType||null,messageAr:String(event.messageAr||'').slice(0,4000),messageEn:String(event.messageEn||'').slice(0,4000)};
   }
-  const statuses=booking.invitations.map(i=>booking.verifications[i.otaMutamerId]?.status||'pending');
-  booking.status=statuses.includes('unverified')?'unverified':statuses.includes('verified')?'verified':'pending_verification';
+  const statuses=booking.invitations.map(i=>athbitVerification(booking,i)?.status||'pending');
+  booking.status=statuses.includes('unverified')?'unverified':statuses.includes('review_required')?'review_required':statuses.includes('verified')?'verified':'pending_verification';
   return {received:true};
 }

@@ -7,7 +7,7 @@ import {createAthbit,applyAthbitEvent} from '../server/athbit.mjs';
 import {startServices} from '../server/services.mjs';
 import {sign} from '../server/shared.mjs';
 const config={baseUrl:'https://athbit.example',apiKey:'athbit_test_'+'a'.repeat(32),webhookSecret:'test-secret',returnUrl:'https://ota.example/api/athbit/return'};
-const input={serviceId:'utn',visaRequest:{groupInfo:{otaRequestId:'CLIENT-1'},package:{},mutamers:[{otaMutamerId:1,firstNameEn:'Demo',familyNameEn:'One',grandFatherNameEn:'Grand'}]}};
+const input={serviceId:'utn',visaRequest:{groupInfo:{otaRequestId:'CLIENT-1'},package:{},mutamers:[{otaMutamerId:1,firstNameEn:'Demo',familyNameEn:'One',grandFatherNameEn:'Grand',birthDate:'1990-05-12',passportNumber:'DEMO1234'}]}};
 const response={id:'REQ-1',requestId:'CLIENT-1',invitations:[{id:'INV-1',otaMutamerId:1,webUrl:'https://athbit.example/apply/example',status:'pending'}]};
 const event=(revision=1)=>({eventId:'evt_'+revision,eventType:'decision_approved',requestId:'REQ-1',invitationId:'INV-1',otaMutamerId:1,occurredAt:new Date().toISOString(),verification:{status:'verified',revision,certificate:{id:'CERT-1'}}});
 function headers(raw){const ts=String(Date.now());return {'Content-Type':'application/json','x-athbit-timestamp':ts,'x-athbit-event-id':JSON.parse(raw).eventId,'x-athbit-signature':sign(ts+'.'+raw,config.webhookSecret)};}
@@ -45,6 +45,37 @@ test('Athbit checks raw body signatures, age, header ID and signed returns',()=>
   q.set('result','unable_to_verify');assert.throws(()=>client.verifyReturn(q),/signature/);
   q.set('result','submitted');q.set('sig',sign('REF|submitted|'+ts,config.webhookSecret));
   assert.equal(client.verifyReturn(q).result,'submitted');
+  q.set('result','review_required');q.set('sig',sign('REF|review_required|'+ts,config.webhookSecret));
+  assert.equal(client.verifyReturn(q).result,'review_required');
+});
+
+test('Missing birth date or passport in any traveler rejects the whole request before sending',async()=>{
+  let calls=0;const client=createAthbit({...config,fetchImpl:async()=>{calls++;return Response.json(response);}});
+  for(const field of ['birthDate','passportNumber']) {
+    const booking=structuredClone({...input,id:'OTA-12345678'});
+    const second={...booking.visaRequest.mutamers[0],otaMutamerId:2};delete second[field];
+    booking.visaRequest.mutamers.push(second);
+    await assert.rejects(client.submit(booking),/requires birthDate and passportNumber/);
+  }
+  assert.equal(calls,0);
+});
+
+test('Companions are isolated by invitation ID; review has no certificate and correct aggregate priority',()=>{
+  const b={utnRequestId:'REQ-1',invitations:structuredClone(response.invitations),verifications:{}};
+  applyAthbitEvent(b,event(1));
+  const add={eventType:'mutamer.added_by_pilgrim',requestId:'REQ-1',invitationId:'COMP-1',addedByInvitationId:'INV-1',fullNameEn:'DEMO COMPANION',relationship:'wife'};
+  applyAthbitEvent(b,add);applyAthbitEvent(b,add);
+  applyAthbitEvent(b,{...add,invitationId:'COMP-2'});
+  assert.equal(b.invitations.length,3);
+  assert.equal(b.invitations[1].otaMutamerId,undefined);
+  const decision={...event(2),invitationId:'COMP-1',otaMutamerId:undefined,verification:{status:'review_required',outcome:'review_required',revision:2,certificate:null}};
+  applyAthbitEvent(b,decision);
+  assert.equal(b.status,'review_required');assert.equal(b.companionVerifications['COMP-1'].certificate,null);
+  assert.equal(b.companionVerifications['COMP-2'],undefined);assert.equal(b.verifications[1].status,'verified');
+  applyAthbitEvent(b,{...decision,invitationId:'COMP-2',verification:{status:'unverified',revision:1,certificate:{id:'INVALID'}}});
+  assert.equal(b.status,'unverified');assert.equal(b.companionVerifications['COMP-2'].certificate,null);
+  assert.throws(()=>applyAthbitEvent(b,{...decision,invitationId:'NOT-YET-ADDED'}),/not available yet/);
+  assert.throws(()=>applyAthbitEvent(b,{...add,requestId:'REQ-OTHER'}),/request mismatch/);
 });
 
 test('SOP platform base is not duplicated and journey links stay on provider origin',async()=>{
@@ -80,4 +111,13 @@ test('OTA round trip with Athbit fixture preserves webhook result and ignores du
   r=await fetch(s.otaUrl+'/api/webhooks/athbit',{method:'POST',headers:headers(raw),body:raw});assert.equal((await r.json()).duplicate,true);
   r=await fetch(s.otaUrl+'/api/bookings/'+b.id,{headers:{Authorization:'Bearer '+b.accessToken}});
   const updated=await r.json();assert.equal(updated.invitations[0].status,'verified');assert.equal(updated.verifications[1].simulated,true);
+  const add=JSON.stringify({eventId:'evt_companion',eventType:'mutamer.added_by_pilgrim',requestId:'REQ-1',invitationId:'COMP-HTTP',addedByInvitationId:'INV-1',fullNameEn:'DEMO COMPANION',relationship:'wife'});
+  r=await fetch(s.otaUrl+'/api/webhooks/athbit',{method:'POST',headers:headers(add),body:add});assert.equal(r.status,200);
+  r=await fetch(s.otaUrl+'/api/webhooks/athbit',{method:'POST',headers:headers(add),body:add});assert.equal((await r.json()).duplicate,true);
+  const review=JSON.stringify({...event(2),eventId:'evt_review',invitationId:'COMP-HTTP',otaMutamerId:undefined,verification:{status:'review_required',outcome:'review_required',revision:2,certificate:null}});
+  r=await fetch(s.otaUrl+'/api/webhooks/athbit',{method:'POST',headers:headers(review),body:review});assert.equal(r.status,200);
+  r=await fetch(s.otaUrl+'/api/bookings/'+b.id,{headers:{Authorization:'Bearer '+b.accessToken}});
+  const reviewed=await r.json();assert.equal(reviewed.status,'review_required');
+  const companion=reviewed.invitations.find(i=>i.id==='COMP-HTTP');
+  assert.equal(companion.applicantName,'DEMO COMPANION');assert.equal(companion.status,'review_required');assert.equal(companion.certificate,null);
 });

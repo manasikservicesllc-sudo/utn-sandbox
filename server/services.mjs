@@ -16,7 +16,7 @@ import {
 import { reviewImage } from "./ai.mjs";
 import { invitationEmail, dispatchEmail } from "./email.mjs";
 import { createPersona } from './persona.mjs';
-import { createAthbit, applyAthbitEvent } from './athbit.mjs';
+import { createAthbit, applyAthbitEvent, athbitVerification } from './athbit.mjs';
 
 export function createRuntime(options = {}) {
   const athbitEnabled=options.athbitEnabled ?? process.env.ATHBIT_ENABLED === 'true';
@@ -86,9 +86,9 @@ export function createRuntime(options = {}) {
     status: b.status,
     invitations: b.invitations.map((i) => ({
       ...i,
-      status: b.verifications[i.otaMutamerId]?.status || "pending",
-      certificate: b.verifications[i.otaMutamerId]?.certificate || null,
-      applicantName: b.visaRequest.mutamers
+      status: athbitVerification(b,i)?.status || "pending",
+      certificate: athbitVerification(b,i)?.certificate || null,
+      applicantName: i.addedByPilgrim ? i.applicantName : b.visaRequest.mutamers
         .filter((a) => a.otaMutamerId === i.otaMutamerId)
         .map((a) =>
           [a.firstNameEn, a.familyNameEn].filter(Boolean).join(" "),

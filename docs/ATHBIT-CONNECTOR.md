@@ -2,7 +2,11 @@
 
 Prepared against the production team's Arabic integration guide dated 13 October 2026 and updated against Athbit_Partner_SOP.pdf dated 18 October 2026 (pages 16–18). Deployed and enabled for new OTA test bookings on 19 October 2026. Existing bookings retain their original provider. Credentials are Cloudflare secrets, not repository files.
 
-## Current external test result — 19 October 2026
+## Latest deployed contract test
+
+Worker `59f7c22b-f01e-4c85-b943-8d7a5c79001b` includes the production team's four contract changes. New synthetic OTA intake returned HTTP 201, Athbit request `REQ-KWTXIDL6`, OTA booking `OTA-TJEMDXAQVB`, reference `MANASIK-ATHBIT-CONTRACT-V2-01`. Persisted booking read returned HTTP 200. Status remains pending verification; provider-originated companion/review events and handoff fallback still await joint testing. The local regression suite passed all 30 tests; the signed-HTTP fixture covers the new event flow. Later tests with a mobile number succeeded, superseding the initial intake failure below.
+
+## Initial external test result — 19 October 2026
 
 - Worker version: `5807a627-ce85-4ffd-924b-4a0e94b577b0`.
 - `ATHBIT_API_KEY` and `ATHBIT_WEBHOOK_SECRET` installed. Sandbox only.
@@ -37,11 +41,21 @@ Set `ATHBIT_BASE_URL` and `ATHBIT_RETURN_URL` as server configuration, install t
 
 - Requests explicitly set `return_mode=after_submit`. The signed `result=submitted` return is accepted but never changes the verification outcome. `case_submitted` is a workflow event; the decision arrives later.
 - The optional `groupUrl` is validated, persisted, and shown on the booking so multiple pilgrims can complete the journey together. Individual `webUrl` links remain available.
-- The SOP also offers `handoffUrl`, a one-use 15-minute link that bypasses identity confirmation, and `POST /v1/verification-requests/{id}/handoff` to renew it. Automatic handoff and renewal are **not enabled** in this public demo: its demo sign-in does not establish the authenticated customer identity assumed by that flow. The adapter validates returned handoff URLs but does not expose them in the booking UI. Use the individual identity-confirmation path until that prerequisite is implemented.
+- The SOP also offers `handoffUrl`, a one-use 60-minute link that bypasses identity confirmation, and `POST /v1/verification-requests/{id}/handoff` to renew it. Automatic handoff and renewal are **not enabled** in this public demo: its demo sign-in does not establish the authenticated customer identity assumed by that flow. The adapter validates returned handoff URLs but does not expose them in the booking UI. Use the individual identity-confirmation path until that prerequisite is implemented.
 - Sandbox suppresses invitation emails; Live sends them. No live key is accepted by this connector.
 - The two supplied Claude artifact pages could not be retrieved with the web reader; the PDF is the source for these updates.
 
 ## Joint acceptance test before enabling
+
+## Production-team contract update (21 October 2026)
+
+- Every traveler requires non-empty `birthDate` and `passportNumber`; a missing value rejects the entire submission with 400 before sending it upstream. OTA ISO date-time values are normalized to calendar dates for Athbit.
+- Handoff links are now single-use for 60 minutes; expiry/reuse falls back to identity confirmation on Athbit. Our UI continues to use group/individual links, with no local handoff expiry timer.
+- `mutamer.added_by_pilgrim` attaches a companion to the matching request and existing parent invitation, using `invitationId` without inventing an `otaMutamerId`. Companion decisions have a separate persisted map by invitation ID. Duplicate events do not add duplicate rows; decisions arriving before the companion event receive a retryable response.
+- `review_required` is accepted in signed decision events and signed returns, displayed bilingually, and never retains a certificate. Aggregate precedence: `unverified`, `review_required`, `verified`, `pending_verification`.
+- Local signed-HTTP fixture tests cover companion addition, duplicate delivery, review decisions and public booking output. A real provider-originated companion/review event and the 60-minute handoff fallback still require the joint acceptance test. GET from Athbit remains available as a client method; no automatic remote polling was added.
+
+### Joint acceptance test
 
 Send `test.ping`, submit a two-traveler dummy request, replay the same intake idempotency key, complete the external invitation, request an additional document, and receive a signed final result. Verify duplicate and out-of-order deliveries, revocation/reissue, and the signed return. Confirm actual event shapes, certificate/verifyUrl placement, image handling and URL behavior with the team. Local fixtures cannot establish these service behaviors.
 

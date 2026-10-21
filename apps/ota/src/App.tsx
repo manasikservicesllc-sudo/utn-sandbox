@@ -59,6 +59,7 @@ type Booking = {
 const labels: Record<string, string> = {
   verified: "Verified · تم التحقق من البيانات",
   unverified: "Not Verified · تعذر التحقق",
+  review_required: "Review required · يتطلب مراجعة",
   pending: "Awaiting verification",
   pending_verification: "Awaiting verification",
   action_required: "Action required",
@@ -1119,15 +1120,15 @@ export default function App() {
                       <ShieldCheck className="invite-shield" />
                     </div>
                     <p>
-                      {state === "verified"
+                      {state === "review_required" ? "يتطلب الطلب مراجعة إضافية لدى أثبِت. لم تصدر شهادة. Additional review required; no certificate issued." : state === "verified"
                         ? "Your document data check is complete. This does not include issuer authentication, face matching or liveness."
                         : "Your details are already with UTN. Choose your category and upload the relevant document."}
                     </p>
-                    <a
+                    {(inv.webUrl || inv.token || booking?.groupUrl) && <a
                       className="primary"
                       href={
                         inv.webUrl ||
-                        `${UTN}/?token=${encodeURIComponent(inv.token)}`
+                        (inv.token ? `${UTN}/?token=${encodeURIComponent(inv.token)}` : booking?.groupUrl)
                       }
                       target="_blank"
                       rel="noreferrer"
@@ -1136,14 +1137,15 @@ export default function App() {
                         ? "View UTN credential"
                         : "Continue to UTN"}
                       <ArrowUpRight size={17} />
-                    </a>
+                    </a>}
+                    {inv.addedByPilgrim && <p className="muted">مرافق أُضيف لدى أثبِت · Added by pilgrim</p>}
                     {inv.action && <div className="soft-note" role="status"><p dir="rtl">{inv.action.messageAr}</p><p>{inv.action.messageEn}</p></div>}
                     <div className="invite-links">
                       {inv.deepLink && <a href={inv.deepLink}>Open iOS app</a>}
-                      <button
+                      {(inv.webUrl || inv.token || booking?.groupUrl) && <button
                         onClick={async () => {
                           await navigator.clipboard.writeText(
-                            inv.webUrl || `${UTN}/?token=${inv.token}`,
+                            inv.webUrl || (inv.token ? `${UTN}/?token=${inv.token}` : booking?.groupUrl),
                           );
                           setCopied(true);
                           setTimeout(() => setCopied(false), 2000);
@@ -1151,7 +1153,7 @@ export default function App() {
                       >
                         <Copy size={12} />
                         {copied ? "Copied" : "Copy invitation"}
-                      </button>
+                      </button>}
                     </div>
                     {inv.certificate && (
                       <div className="soft-note">
